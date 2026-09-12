@@ -71,7 +71,9 @@ export function Table({
       </div>
 
       {view.phase === 'roundEnd' && (
-        <RoundEnd state={view} dispatch={dispatch} canAdvance={yourTurn || youId !== null} />
+        // The round break is a table-level control rather than a turn action:
+        // there is no active diver between rounds, so anyone may move it on.
+        <RoundEnd state={view} dispatch={dispatch} shared={youId !== null} />
       )}
       {view.phase === 'gameOver' && <GameOver state={view} onRestart={onRestart} />}
     </div>

@@ -1186,3 +1186,10 @@ button { font: inherit; }
     transition-duration: 0.001ms !important;
   }
 }
+
+.shared-note {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--dim);
+}

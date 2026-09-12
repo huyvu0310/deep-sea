@@ -6,11 +6,12 @@ import { ChipFace } from './chip-face';
 export function RoundEnd({
   state,
   dispatch,
-  canAdvance,
+  shared,
 }: {
   state: GameView;
   dispatch: (action: GameAction) => void;
-  canAdvance: boolean;
+  /** True at an online table, where the button moves the round on for everyone. */
+  shared: boolean;
 }) {
   const summary = state.roundSummary;
   if (!summary) return null;
@@ -65,12 +66,13 @@ export function RoundEnd({
           </section>
         )}
 
-        {canAdvance ? (
-          <button className="btn btn-primary" onClick={() => dispatch({ type: 'continue' })}>
-            {last ? 'Reveal the haul' : `Start round ${state.round + 1}`}
-          </button>
-        ) : (
-          <p className="console-hint">Waiting for the table…</p>
+        <button className="btn btn-primary" onClick={() => dispatch({ type: 'continue' })}>
+          {last ? 'Reveal the haul' : `Start round ${state.round + 1}`}
+        </button>
+        {shared && (
+          <p className="console-hint shared-note">
+            Any diver can move the round on — this closes the debrief for everyone.
+          </p>
         )}
       </div>
     </div>

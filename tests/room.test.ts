@@ -102,6 +102,51 @@ describe('a table', () => {
     expect(lobby.hostId).toBe('p2');
   });
 
+  it('refuses every kind of turn action from the diver whose turn it is not', () => {
+    const { room } = seatedRoom(['Ama', 'Bo']);
+    room.start('seed', 'p1');
+    const wrongTurn = /not your turn/i;
+
+    expect(() => room.apply('p2', { type: 'declare', direction: 'down' })).toThrow(wrongTurn);
+    expect(() => room.apply('p2', { type: 'roll' })).toThrow(wrongTurn);
+    expect(() => room.apply('p2', { type: 'take' })).toThrow(wrongTurn);
+    expect(() => room.apply('p2', { type: 'drop', treasureIndex: 0 })).toThrow(wrongTurn);
+    expect(() => room.apply('p2', { type: 'pass' })).toThrow(wrongTurn);
+  });
+
+  it('leaves the game untouched when an out-of-turn move is refused', () => {
+    const { room, clients } = seatedRoom(['Ama', 'Bo']);
+    room.start('seed', 'p1');
+    room.broadcast();
+    const before = JSON.stringify(clients[0]!.sent.at(-1));
+
+    expect(() => room.apply('p2', { type: 'declare', direction: 'up' })).toThrow();
+
+    room.broadcast();
+    expect(JSON.stringify(clients[0]!.sent.at(-1))).toBe(before);
+  });
+
+  it('follows the turn around the table, refusing whoever is not active', () => {
+    const { room } = seatedRoom(['Ama', 'Bo', 'Cass']);
+    room.start('seed', 'p1');
+
+    // p1 plays a full turn, which hands play to p2
+    room.apply('p1', { type: 'declare', direction: 'down' });
+    room.apply('p1', { type: 'roll' });
+    room.apply('p1', { type: 'pass' });
+
+    // the seat that was allowed a moment ago is now refused
+    expect(() => room.apply('p1', { type: 'declare', direction: 'down' })).toThrow(/not your turn/i);
+    expect(() => room.apply('p3', { type: 'declare', direction: 'down' })).toThrow(/not your turn/i);
+    expect(() => room.apply('p2', { type: 'declare', direction: 'down' })).not.toThrow();
+  });
+
+  it('refuses an action from a seat that is not at this table at all', () => {
+    const { room } = seatedRoom(['Ama', 'Bo']);
+    room.start('seed', 'p1');
+    expect(() => room.apply('p99', { type: 'declare', direction: 'down' })).toThrow(/not your turn/i);
+  });
+
   it('ignores a duplicate round-advance instead of erroring', () => {
     const { room } = seatedRoom(['Ama', 'Bo']);
     room.start('seed', 'p1');
