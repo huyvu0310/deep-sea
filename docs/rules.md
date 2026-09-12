@@ -25,6 +25,8 @@ The behaviour the engine enforces, and where a judgement call was needed.
    steps are lost. Reaching or passing space 0 means climbing aboard.
 5. **One action, optionally**: take the treasure on the current space (leaving
    bare seabed behind) or set one held treasure down on a bare space. Not both.
+   The diver chooses *which* held token to set down; a restacked pile goes back
+   whole, as the single token it is.
 
 A diver who climbs aboard is safe for the rest of the round and takes no further
 turns; their haul is banked and scores at the end of the game.

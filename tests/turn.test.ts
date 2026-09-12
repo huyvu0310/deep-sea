@@ -81,6 +81,31 @@ describe('a turn', () => {
     expect(cellAt(game, 1)).toEqual({ kind: 'treasure', chips: [chip(12)] });
   });
 
+  it('drops exactly the chosen treasure and keeps the rest in order', () => {
+    let game = gameWith({ path: ruins(null, 9), phase: 'action' });
+    game.players[0]!.position = 1;
+    game.players[0]!.holding = [[chip(2)], [chip(14)], [chip(6)]];
+
+    game = applyAction(game, { type: 'drop', treasureIndex: 1 });
+
+    expect(cellAt(game, 1)).toEqual({ kind: 'treasure', chips: [chip(14)] });
+    expect(game.players[0]!.holding).toEqual([[chip(2)], [chip(6)]]);
+  });
+
+  it('can put back a whole drowned-diver stack as one token', () => {
+    let game = gameWith({ path: ruins(null), phase: 'action' });
+    game.players[0]!.position = 1;
+    game.players[0]!.holding = [[chip(1)], [chip(12), chip(13), chip(14)]];
+
+    game = applyAction(game, { type: 'drop', treasureIndex: 1 });
+
+    expect(cellAt(game, 1)).toEqual({
+      kind: 'treasure',
+      chips: [chip(12), chip(13), chip(14)],
+    });
+    expect(game.players[0]!.holding).toEqual([[chip(1)]]);
+  });
+
   it('refuses to drop onto an occupied ruin space', () => {
     const game = gameWith({ path: ruins(4, 9), phase: 'action' });
     game.players[0]!.position = 1;

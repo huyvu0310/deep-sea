@@ -51,6 +51,13 @@ zone are still on the route, and how stacks score.
    seabed, marked ×) or **drop** one chip you carry onto a bare tile. One or the
    other, never both — and skipping is always allowed.
 
+   When you drop, **you choose which chip goes back** — any one you carry, not
+   just the one you picked up last. The picker labels each by depth zone, so you
+   can keep the deep one and shed a shallow one. Two chips from the same zone
+   are genuinely interchangeable: they are face down, so you know no more about
+   one than the other. A drowned diver's stack of three counts as a single
+   token, and goes back as a whole stack.
+
 Reach the submarine and you are safe: your haul is banked and you sit out the
 rest of the round.
 

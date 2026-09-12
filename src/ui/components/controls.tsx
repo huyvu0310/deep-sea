@@ -1,5 +1,6 @@
 import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
+import { LEVEL_STYLES } from '../theme';
 import { ChipFace } from './chip-face';
 import { ArrowDownIcon, DiceIcon, ScoopIcon, TrashIcon, TrendingUpIcon } from './icons';
 
@@ -154,6 +155,54 @@ function RollActions({
   );
 }
 
+/**
+ * Putting a treasure back is a genuine choice: the rules let a diver set down
+ * any one token they carry, not just the last one picked up. Each option is
+ * labelled with its depth zone, which is all a diver actually knows about a
+ * face-down chip — two chips from the same zone really are interchangeable.
+ */
+function DropPicker({
+  player,
+  dispatch,
+}: {
+  player: GameView['players'][number];
+  dispatch: (action: GameAction) => void;
+}) {
+  return (
+    <div className="drop-picker">
+      <span className="drop-title">
+        <TrashIcon size={13} />
+        LEAVE A CHIP HERE — PICK WHICH
+      </span>
+      <div className="drop-options">
+        {player.holding.map((treasure, index) => {
+          const level = treasure[0]?.level;
+          const style = level ? LEVEL_STYLES[level] : null;
+          const stacked = treasure.length > 1;
+          return (
+            <button
+              key={index}
+              className="drop-option"
+              onClick={() => dispatch({ type: 'drop', treasureIndex: index })}
+              title={
+                stacked
+                  ? `Put back this stack of ${treasure.length}`
+                  : `Put back this ${style?.depth ?? ''} chip`
+              }
+            >
+              <ChipFace chips={treasure} size="sm" />
+              <span className="drop-option-text">
+                {stacked ? `stack of ${treasure.length}` : (style?.depth ?? '')}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="console-hint">Lightens you by one air and one space per turn.</p>
+    </div>
+  );
+}
+
 function TurnActions({
   state,
   dispatch,
@@ -180,25 +229,13 @@ function TurnActions({
         )}
       </div>
 
-      {(state.canDrop || state.canTake) && (
+      {state.canDrop && <DropPicker player={player} dispatch={dispatch} />}
+
+      {state.canTake && (
         <div className="secondary-actions">
-          {state.canDrop &&
-            player.holding.map((treasure, index) => (
-              <button
-                key={index}
-                className="btn btn-ghost"
-                onClick={() => dispatch({ type: 'drop', treasureIndex: index })}
-              >
-                <TrashIcon size={14} />
-                DROP
-                <ChipFace chips={treasure} size="sm" />
-              </button>
-            ))}
-          {state.canTake && (
-            <button className="btn btn-ghost" onClick={() => dispatch({ type: 'pass' })}>
-              LEAVE IT
-            </button>
-          )}
+          <button className="btn btn-ghost" onClick={() => dispatch({ type: 'pass' })}>
+            LEAVE IT
+          </button>
         </div>
       )}
 

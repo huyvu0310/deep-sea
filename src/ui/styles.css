@@ -1069,3 +1069,47 @@ button { font: inherit; }
 }
 
 .sheet-total strong { font-family: var(--font-mono); font-size: 15px; color: var(--teal); }
+
+
+/* ---------- choosing a chip to put back ---------- */
+
+.drop-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px dashed var(--edge);
+  border-radius: 8px;
+}
+
+.drop-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.drop-options { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.drop-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--raise);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.drop-option:hover { background: var(--active); border-color: var(--teal); }
+
+.drop-option-text { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.drop-option:hover .drop-option-text { color: var(--ink); }
