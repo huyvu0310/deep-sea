@@ -196,7 +196,7 @@ function roll(state: GameState): GameState {
     player.direction,
   );
   const destination = travel.at(-1) ?? player.position;
-  const lastRoll: RollResult = { dice, total, moved, travel };
+  const lastRoll: RollResult = { actorId: player.id, dice, total, moved, travel };
 
   let next: GameState = { ...state, rng: second.state, lastRoll };
   next = withLog(
@@ -290,9 +290,9 @@ function endTurn(state: GameState): GameState {
     index = (index + 1) % state.players.length;
     if (!state.players[index]?.returned) break;
   }
-  // The dice belong to the turn that rolled them: clearing here stops the next
-  // diver opening their turn staring at somebody else's result.
-  return { ...state, currentPlayerIndex: index, phase: 'declare', lastRoll: null };
+  // The roll is kept rather than cleared — it is tagged with the diver who made
+  // it, so the board can show it while hiding it from the next diver's console.
+  return { ...state, currentPlayerIndex: index, phase: 'declare' };
 }
 
 function closeRound(state: GameState, everyoneHome: boolean): GameState {

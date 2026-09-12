@@ -57,6 +57,12 @@ export interface Player {
 export type Phase = 'declare' | 'roll' | 'action' | 'roundEnd' | 'gameOver';
 
 export interface RollResult {
+  /**
+   * The diver who rolled. Kept on the roll itself so it can still be shown
+   * after play has moved on — the roll that carries someone home ends their
+   * turn immediately, and would otherwise vanish before anyone saw it.
+   */
+  actorId: string;
   dice: [number, number];
   /** Raw dice sum, before the carried-treasure penalty. */
   total: number;

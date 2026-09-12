@@ -47,7 +47,7 @@ export function Controls({ state, dispatch, error, yourTurn }: ControlsProps) {
  * How long the dice tumble before showing what was actually rolled. The board
  * waits this long before swimming the diver, so the result is known first.
  */
-export const DICE_SETTLE_MS = 1100;
+export const DICE_SETTLE_MS = 1900;
 const TUMBLE_MS = DICE_SETTLE_MS;
 const TUMBLE_FRAME_MS = 80;
 
@@ -59,7 +59,11 @@ const TUMBLE_FRAME_MS = 80;
  * and it is skipped entirely for viewers who asked for reduced motion.
  */
 function DiceDeck({ state }: { state: GameView }) {
-  const roll = state.lastRoll;
+  // Only the roll belonging to the diver now on turn: the roll is kept after
+  // their turn ends so the board can replay it, but the next diver's console
+  // must not open showing somebody else's result.
+  const active = state.players[state.currentPlayerIndex];
+  const roll = state.lastRoll && state.lastRoll.actorId === active?.id ? state.lastRoll : null;
   const reducedMotion = usePrefersReducedMotion();
   const [tumbling, setTumbling] = useState(false);
   const [faces, setFaces] = useState<[number, number]>([1, 1]);

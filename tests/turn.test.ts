@@ -131,16 +131,31 @@ describe('a turn', () => {
 });
 
 describe('the dice belong to the turn that rolled them', () => {
-  it('clears the previous result when play passes to the next diver', () => {
+  it('tags the roll with the diver who made it, so it survives the turn', () => {
     let game = gameWith({ path: ruins(...Array(12).fill(1)) });
     game = applyAction(game, { type: 'declare', direction: 'down' });
     game = applyAction(game, { type: 'roll' });
-    expect(game.lastRoll).not.toBeNull();
+    expect(game.lastRoll!.actorId).toBe('p1');
 
     game = applyAction(game, { type: 'pass' });
 
+    // Play has moved on, but the roll is still readable and still credited.
     expect(game.currentPlayerIndex).toBe(1);
-    expect(game.lastRoll).toBeNull();
+    expect(game.lastRoll!.actorId).toBe('p1');
+  });
+
+  it('keeps the roll that carries a diver home, which ends their turn at once', () => {
+    let game = gameWith({ path: ruins(1, 2, 3, 4, 5) });
+    game.players[0]!.position = 1;
+    game.players[0]!.direction = 'up';
+
+    game = applyAction(game, { type: 'declare', direction: 'up' });
+    game = applyAction(game, { type: 'roll' });
+
+    expect(game.players[0]!.returned).toBe(true);
+    expect(game.lastRoll).not.toBeNull();
+    expect(game.lastRoll!.actorId).toBe('p1');
+    expect(game.lastRoll!.travel.at(-1)).toBe(0);
   });
 
   it('records the spaces swum so the swim can be played out', () => {

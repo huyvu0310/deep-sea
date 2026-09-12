@@ -12,6 +12,7 @@ import { LogPanel, makeColorOf } from './log-panel';
 import { PlayerList } from './player-list';
 import { Route } from './route';
 import { GameOver, RoundEnd } from './round-end';
+import { TurnOverlay } from './turn-overlay';
 
 export interface TableProps {
   view: GameView;
@@ -104,6 +105,7 @@ export function Table({
       {view.phase === 'gameOver' && <GameOver state={view} onRestart={onRestart} />}
 
       <ActionFeed entries={view.log} youId={youId} colorOf={colorOf} />
+      <TurnOverlay view={view} colorOf={colorOf} />
     </div>
   );
 }
