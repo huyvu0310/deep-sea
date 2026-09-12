@@ -3,6 +3,7 @@ import type { GameView, ViewCell } from '../../net/view';
 import { LEVEL_STYLES, TILES_PER_ROW, diverColor } from '../theme';
 import { AnchorIcon } from './icons';
 import { ChipFace } from './chip-face';
+import { ChipGuide } from './chip-guide';
 
 interface Tile {
   position: number;
@@ -55,7 +56,7 @@ export function Route({ state }: { state: GameView }) {
 
   return (
     <div className="trench-map">
-      <ZoneLegend />
+      <ChipGuide path={state.path} />
 
       <div className="submarine-piece">
         <span className="sub-art">
@@ -99,23 +100,6 @@ export function Route({ state }: { state: GameView }) {
         <span>CRITICAL DEPTH ZONE // MAXIMUM PRESSURE</span>
         <span>Returning to the SS-Orion becomes harder the deeper you descend.</span>
       </div>
-    </div>
-  );
-}
-
-function ZoneLegend() {
-  return (
-    <div className="zone-legend">
-      <span className="legend-title">DEPTH ZONES:</span>
-      {([1, 2, 3, 4] as const).map((level) => {
-        const style = LEVEL_STYLES[level];
-        return (
-          <span key={level} className="legend-item">
-            <i className="legend-dot" style={{ background: style.color }} />
-            {style.depth} ({style.glyph})
-          </span>
-        );
-      })}
     </div>
   );
 }

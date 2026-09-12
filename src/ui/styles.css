@@ -425,25 +425,155 @@ button { font: inherit; }
 
 .zone-legend {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
   padding: 12px;
   background: var(--shell);
   border: 1px solid var(--edge);
   border-radius: 8px;
 }
 
+.legend-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
 .legend-title {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 12px;
+  letter-spacing: 0.08em;
   color: var(--muted);
 }
 
-.legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; }
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.legend-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--teal);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.legend-info:hover { background: var(--active); }
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.legend-item { display: flex; align-items: center; gap: 7px; min-width: 0; }
+
+.legend-badge {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 18px;
+  flex: none;
+  border-radius: 4px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.legend-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+
+.legend-text b {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.legend-text small { font-size: 10px; color: var(--muted); }
+
+/* ---------- chip value reference ---------- */
+
+.guide-intro { margin: 0 0 18px; font-size: 13px; color: var(--muted); }
+
+.guide-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.guide-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+  background: var(--raise);
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+}
+
+.guide-badge {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 16px;
+  font-style: normal;
+}
+
+.guide-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.guide-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+.guide-head strong {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.guide-depth { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+.guide-values { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+.guide-value {
+  min-width: 20px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  text-align: center;
+}
+
+.guide-note { margin-left: 4px; font-size: 10px; color: var(--dim); }
+
+.guide-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  line-height: 1.15;
+}
+
+.guide-left b { font-family: var(--font-mono); font-size: 17px; color: var(--teal); }
+.guide-left small { font-size: 9px; color: var(--muted); }
+
+.guide-foot {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.guide-foot b { color: var(--ink); }
 
 .submarine-piece {
   display: flex;
@@ -760,6 +890,9 @@ button { font: inherit; }
 .overlay {
   position: fixed;
   inset: 0;
+  /* Positioned board elements later in the DOM would otherwise paint over a
+     dialog opened from above them. */
+  z-index: 50;
   display: grid;
   place-items: center;
   padding: 20px;

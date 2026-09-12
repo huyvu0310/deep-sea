@@ -33,6 +33,10 @@ face-down ruin chip, and the badge on it tells you only its **depth zone**:
 You never see a chip's exact value until the end of the game. A deep red chip
 could be worth 12 or 15 — you only know it beats anything blue.
 
+The legend above the trench shows these ranges at a glance, and **Chip values**
+opens a full reference: the exact values in each zone, how many chips of each
+zone are still on the route, and how stacks score.
+
 ## Your turn
 
 1. **Choose a direction.** *Dive deeper* or *Turn back*. Turning back is
