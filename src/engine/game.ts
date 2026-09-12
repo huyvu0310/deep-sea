@@ -2,6 +2,7 @@ import type {
   Direction,
   GameAction,
   GameState,
+  LogEntry,
   PathCell,
   Player,
   RollResult,
@@ -58,7 +59,7 @@ export function createGame(options: NewGameOptions): GameState {
     rng,
     airDepleted: false,
     roundSummary: null,
-    log: ['Round 1 — the divers drop into the water.'],
+    log: [{ text: 'Round 1 — the divers drop into the water.', actorId: null }],
   };
 }
 
@@ -103,7 +104,12 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     case 'drop':
       return drop(state, action.treasureIndex);
     case 'pass':
-      return endTurn(withLog(state, `${currentPlayer(state).name} leaves the ruins untouched.`));
+      return endTurn(
+        withLog(
+          state,
+          byDiver(currentPlayer(state).id, `${currentPlayer(state).name} leaves the ruins untouched.`),
+        ),
+      );
     case 'continue':
       return beginNextRound(state);
   }
@@ -113,8 +119,18 @@ function assertLegal(condition: boolean, message: string): void {
   if (!condition) throw new IllegalActionError(message);
 }
 
-function withLog(state: GameState, ...lines: string[]): GameState {
-  return { ...state, log: [...state.log, ...lines] };
+function withLog(state: GameState, ...entries: LogEntry[]): GameState {
+  return { ...state, log: [...state.log, ...entries] };
+}
+
+/** A line caused by a particular diver. */
+function byDiver(actorId: string, text: string): LogEntry {
+  return { text, actorId };
+}
+
+/** A line about the table rather than any one diver. */
+function atTable(text: string): LogEntry {
+  return { text, actorId: null };
 }
 
 function replacePlayer(state: GameState, player: Player): Player[] {
@@ -146,10 +162,14 @@ function declare(state: GameState, direction: Direction): GameState {
     airDepleted: state.air - cost <= 0,
     phase: 'roll',
   };
-  if (turning) next = withLog(next, `${player.name} turns around and heads for the surface.`);
-  if (cost > 0) next = withLog(next, `${player.name} burns ${cost} air (${air} left).`);
+  if (turning) {
+    next = withLog(next, byDiver(player.id, `${player.name} turns around and heads for the surface.`));
+  }
+  if (cost > 0) {
+    next = withLog(next, byDiver(player.id, `${player.name} burns ${cost} air (${air} left).`));
+  }
   if (next.airDepleted && !state.airDepleted) {
-    next = withLog(next, 'The air runs out! This is the last turn of the round.');
+    next = withLog(next, atTable('The air runs out! This is the last turn of the round.'));
   }
   return next;
 }
@@ -180,7 +200,7 @@ function roll(state: GameState): GameState {
   let next: GameState = { ...state, rng: second.state, lastRoll };
   next = withLog(
     next,
-    `${player.name} rolls ${dice[0]}+${dice[1]} and swims ${moved} space(s).`,
+    byDiver(player.id, `${player.name} rolls ${dice[0]}+${dice[1]} and swims ${moved} space(s).`),
   );
 
   if (player.direction === 'up' && destination === 0) {
@@ -199,9 +219,12 @@ function roll(state: GameState): GameState {
     // value — only how many tokens changed hands.
     next = withLog(
       { ...next, players: replacePlayer(next, surfaced) },
-      haul.length > 0
-        ? `${player.name} climbs aboard with ${haul.length} treasure.`
-        : `${player.name} climbs aboard empty-handed.`,
+      byDiver(
+        player.id,
+        haul.length > 0
+          ? `${player.name} climbs aboard with ${haul.length} treasure.`
+          : `${player.name} climbs aboard empty-handed.`,
+      ),
     );
     return endTurn(next);
   }
@@ -224,7 +247,10 @@ function take(state: GameState): GameState {
   return endTurn(
     withLog(
       { ...state, path, players: replacePlayer(state, holder) },
-      `${player.name} scoops up ${cell.chips.length > 1 ? `a stack of ${cell.chips.length}` : 'a ruin chip'}.`,
+      byDiver(
+        player.id,
+        `${player.name} scoops up ${cell.chips.length > 1 ? `a stack of ${cell.chips.length}` : 'a ruin chip'}.`,
+      ),
     ),
   );
 }
@@ -246,7 +272,7 @@ function drop(state: GameState, treasureIndex: number): GameState {
   return endTurn(
     withLog(
       { ...state, path, players: replacePlayer(state, lighter) },
-      `${player.name} drops a treasure to swim lighter.`,
+      byDiver(player.id, `${player.name} drops a treasure to swim lighter.`),
     ),
   );
 }
@@ -271,9 +297,11 @@ function closeRound(state: GameState, everyoneHome: boolean): GameState {
   const nameOf = (id: string) => state.players.find((p) => p.id === id)?.name ?? id;
   return withLog(
     { ...state, phase: 'roundEnd', roundSummary: summary },
-    everyoneHome
-      ? `Every diver is back aboard — round ${state.round} ends.`
-      : `Round ${state.round} ends.`,
+    atTable(
+      everyoneHome
+        ? `Every diver is back aboard — round ${state.round} ends.`
+        : `Round ${state.round} ends.`,
+    ),
     ...describeSummary(summary, nameOf),
   );
 }
@@ -294,7 +322,7 @@ function beginNextRound(state: GameState): GameState {
   if (round > state.totalRounds) {
     return withLog(
       { ...state, players, path, phase: 'gameOver' },
-      'The expedition is over.',
+      atTable('The expedition is over.'),
     );
   }
 
@@ -311,6 +339,6 @@ function beginNextRound(state: GameState): GameState {
       currentPlayerIndex: (round - 1) % players.length,
       phase: 'declare',
     },
-    `Round ${round} — the route is ${path.length} spaces long.`,
+    atTable(`Round ${round} — the route is ${path.length} spaces long.`),
   );
 }

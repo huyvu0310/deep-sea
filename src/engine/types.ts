@@ -73,6 +73,16 @@ export interface RoundSummary {
   restacked: Chip[][];
 }
 
+/**
+ * One line of commentary, tagged with the diver who caused it so the interface
+ * can say plainly who did what. Table-level events (a round ending, the air
+ * running out) carry no actor.
+ */
+export interface LogEntry {
+  text: string;
+  actorId: string | null;
+}
+
 export interface RngState {
   seed: number;
 }
@@ -91,7 +101,7 @@ export interface GameState {
   /** Set when air hits 0. The active diver finishes their turn, then the round ends. */
   airDepleted: boolean;
   roundSummary: RoundSummary | null;
-  log: string[];
+  log: LogEntry[];
 }
 
 export type GameAction =

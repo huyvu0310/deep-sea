@@ -1,10 +1,12 @@
+import { useMemo } from 'react';
 import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
 import { AirHud } from './air-hud';
 import { AppHeader } from './app-header';
 import { ChipGuide } from './chip-guide';
 import { Controls } from './controls';
-import { LogPanel } from './log-panel';
+import { ActionFeed } from './action-feed';
+import { LogPanel, makeColorOf } from './log-panel';
 import { PlayerList } from './player-list';
 import { Route } from './route';
 import { GameOver, RoundEnd } from './round-end';
@@ -39,6 +41,8 @@ export function Table({
   const active = view.players[view.currentPlayerIndex];
   const yourTurn = youId === null || active?.id === youId;
   const stillDiving = view.players.filter((p) => !p.returned).length;
+  const colorOf = useMemo(() => makeColorOf(view.players), [view.players]);
+  const playing = view.phase === 'declare' || view.phase === 'roll' || view.phase === 'action';
 
   return (
     <div className="game-shell">
@@ -53,7 +57,7 @@ export function Table({
           {banner && <p className="banner">{banner}</p>}
           <PlayerList state={view} {...(youId ? { youId } : {})} />
           <Controls state={view} dispatch={dispatch} error={error} yourTurn={yourTurn} />
-          <LogPanel lines={view.log} />
+          <LogPanel entries={view.log} colorOf={colorOf} />
           <button className="btn btn-ghost panel-quit" onClick={onLeave}>
             {leaveLabel}
           </button>
@@ -66,6 +70,25 @@ export function Table({
             <AirHud state={view} />
             <ChipGuide path={view.path} />
           </div>
+
+          {playing && active && (
+            <p className={`turn-banner${yourTurn ? ' turn-banner-yours' : ''}`}>
+              {youId === null ? (
+                <>
+                  <i className="turn-dot" style={{ background: colorOf(active.id) ?? '' }} />
+                  {active.name}'s turn
+                </>
+              ) : yourTurn ? (
+                'Your turn'
+              ) : (
+                <>
+                  <i className="turn-dot" style={{ background: colorOf(active.id) ?? '' }} />
+                  Waiting for {active.name}
+                </>
+              )}
+            </p>
+          )}
+
           <Route state={view} />
         </main>
       </div>
@@ -76,6 +99,8 @@ export function Table({
         <RoundEnd state={view} dispatch={dispatch} shared={youId !== null} />
       )}
       {view.phase === 'gameOver' && <GameOver state={view} onRestart={onRestart} />}
+
+      <ActionFeed entries={view.log} youId={youId} colorOf={colorOf} />
     </div>
   );
 }

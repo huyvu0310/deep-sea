@@ -9,7 +9,8 @@ slow, and slow divers drown.
 **On one device (hot-seat).** `npm run dev`, open http://localhost:5173, name
 the divers, press **Dive in**, and pass the laptop around.
 
-**Online, one device each.** Run `npm run server` in a second terminal. One
+**Online, one device each.** Two to six divers per table. Run `npm run server`
+in a second terminal. One
 player picks **Play online → Start a new table** and reads out the four-letter
 code; everyone else picks **Play online**, types their name and the code, and
 presses **Join**. The host presses **Cast off** once at least two divers are in.
@@ -60,6 +61,10 @@ zone are still on the route, and how stacks score.
 
 Reach the submarine and you are safe: your haul is banked and you sit out the
 rest of the round.
+
+At an online table you only act on your own turn — the console shows
+"Waiting for …" when it is someone else's, and the server refuses a move sent
+out of turn. Notices in the corner tell you what the others just did.
 
 **Click any diver's card** to see their chips — what they are carrying right
 now, and what they have banked, grouped by round. You will see each chip's

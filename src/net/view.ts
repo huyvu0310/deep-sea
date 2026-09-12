@@ -1,6 +1,7 @@
 import type {
   Direction,
   GameState,
+  LogEntry,
   RollResult,
   Standing,
   TreasureLevel,
@@ -58,7 +59,7 @@ export interface GameView {
   players: ViewPlayer[];
   currentPlayerIndex: number;
   lastRoll: RollResult | null;
-  log: string[];
+  log: LogEntry[];
   roundSummary: ViewRoundSummary | null;
   /** Legal moves, decided by the engine so the client never has to know rules. */
   legalDirections: Direction[];

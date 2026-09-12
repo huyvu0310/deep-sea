@@ -1,4 +1,4 @@
-import type { Chip, GameState, PathCell, Player, RoundSummary } from './types';
+import type { Chip, GameState, LogEntry, PathCell, Player, RoundSummary } from './types';
 import { playerAtRisk, roundHaul } from './scoring';
 
 export const RESTACK_SIZE = 3;
@@ -65,25 +65,35 @@ export function resetDivers(players: readonly Player[]): Player[] {
   }));
 }
 
-export function describeSummary(summary: RoundSummary, nameOf: (id: string) => string): string[] {
-  const lines: string[] = [];
+export function describeSummary(
+  summary: RoundSummary,
+  nameOf: (id: string) => string,
+): LogEntry[] {
+  const lines: LogEntry[] = [];
   // Values stay secret until scoring, so these lines count tokens only.
   for (const entry of summary.survivors) {
-    lines.push(
-      entry.tokens > 0
-        ? `${nameOf(entry.playerId)} surfaced with ${entry.tokens} treasure.`
-        : `${nameOf(entry.playerId)} surfaced empty-handed.`,
-    );
+    lines.push({
+      actorId: entry.playerId,
+      text:
+        entry.tokens > 0
+          ? `${nameOf(entry.playerId)} surfaced with ${entry.tokens} treasure.`
+          : `${nameOf(entry.playerId)} surfaced empty-handed.`,
+    });
   }
   for (const entry of summary.drowned) {
-    lines.push(
-      entry.tokens > 0
-        ? `${nameOf(entry.playerId)} ran out of air and lost ${entry.tokens} treasure.`
-        : `${nameOf(entry.playerId)} ran out of air empty-handed.`,
-    );
+    lines.push({
+      actorId: entry.playerId,
+      text:
+        entry.tokens > 0
+          ? `${nameOf(entry.playerId)} ran out of air and lost ${entry.tokens} treasure.`
+          : `${nameOf(entry.playerId)} ran out of air empty-handed.`,
+    });
   }
   if (summary.restacked.length > 0) {
-    lines.push(`${summary.restacked.length} stack(s) sank to the end of the route.`);
+    lines.push({
+      actorId: null,
+      text: `${summary.restacked.length} stack(s) sank to the end of the route.`,
+    });
   }
   return lines;
 }
