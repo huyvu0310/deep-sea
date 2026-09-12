@@ -43,9 +43,13 @@ export function Controls({ state, dispatch, error, yourTurn }: ControlsProps) {
   );
 }
 
-/** How long the dice tumble before showing what was actually rolled. */
-const TUMBLE_MS = 460;
-const TUMBLE_FRAME_MS = 70;
+/**
+ * How long the dice tumble before showing what was actually rolled. The board
+ * waits this long before swimming the diver, so the result is known first.
+ */
+export const DICE_SETTLE_MS = 1100;
+const TUMBLE_MS = DICE_SETTLE_MS;
+const TUMBLE_FRAME_MS = 80;
 
 /**
  * Shows the last roll: how far the diver swam, and the raw dice behind it.
@@ -59,12 +63,16 @@ function DiceDeck({ state }: { state: GameView }) {
   const reducedMotion = usePrefersReducedMotion();
   const [tumbling, setTumbling] = useState(false);
   const [faces, setFaces] = useState<[number, number]>([1, 1]);
-  const lastSeen = useRef(state.lastRoll);
+  // Compared by value, not identity: every server message is freshly parsed, so
+  // an identical roll object arrives as a new reference and would otherwise
+  // look like a brand new roll on every update.
+  const rollKey = roll ? `${roll.dice[0]}-${roll.dice[1]}-${roll.moved}` : null;
+  const lastSeen = useRef(rollKey);
 
   useEffect(() => {
-    if (state.lastRoll === lastSeen.current) return;
-    lastSeen.current = state.lastRoll;
-    if (!state.lastRoll || reducedMotion) return;
+    if (rollKey === lastSeen.current) return;
+    lastSeen.current = rollKey;
+    if (rollKey === null || reducedMotion) return;
 
     setTumbling(true);
     const face = () => (Math.floor(Math.random() * 3) + 1) as number;
@@ -78,7 +86,7 @@ function DiceDeck({ state }: { state: GameView }) {
       clearInterval(spin);
       clearTimeout(settle);
     };
-  }, [state.lastRoll, reducedMotion]);
+  }, [rollKey, reducedMotion]);
 
   const shown: [number | null, number | null] = tumbling
     ? faces

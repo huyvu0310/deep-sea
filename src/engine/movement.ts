@@ -10,6 +10,10 @@ function isOccupied(players: readonly Player[], moverId: string, index: number):
 /**
  * Walk `steps` spaces in `direction`, skipping occupied spaces.
  *
+ * Returns every space the diver passes through, in order, so the interface can
+ * show the swim rather than a jump; the last entry is where they end up, and an
+ * empty result means they could not move at all.
+ *
  * Swimming down stops at the last space of the route; leftover steps are lost.
  * Swimming up, reaching or passing space 0 means climbing back into the
  * submarine, which is reported as position 0.
@@ -20,8 +24,9 @@ export function resolveMovement(
   pathLength: number,
   steps: number,
   direction: Direction,
-): number {
+): number[] {
   const delta = direction === 'down' ? 1 : -1;
+  const travelled: number[] = [];
   let position = mover.position;
 
   for (let step = 0; step < steps; step++) {
@@ -32,9 +37,11 @@ export function resolveMovement(
     if (direction === 'down') {
       if (next > pathLength) break; // cannot swim past the deepest ruin
     } else if (next <= 0) {
-      return 0; // safely aboard
+      travelled.push(0); // safely aboard
+      return travelled;
     }
     position = next;
+    travelled.push(position);
   }
-  return position;
+  return travelled;
 }

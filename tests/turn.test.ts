@@ -129,3 +129,27 @@ describe('a turn', () => {
     expect(game.currentPlayerIndex).toBe(2);
   });
 });
+
+describe('the dice belong to the turn that rolled them', () => {
+  it('clears the previous result when play passes to the next diver', () => {
+    let game = gameWith({ path: ruins(...Array(12).fill(1)) });
+    game = applyAction(game, { type: 'declare', direction: 'down' });
+    game = applyAction(game, { type: 'roll' });
+    expect(game.lastRoll).not.toBeNull();
+
+    game = applyAction(game, { type: 'pass' });
+
+    expect(game.currentPlayerIndex).toBe(1);
+    expect(game.lastRoll).toBeNull();
+  });
+
+  it('records the spaces swum so the swim can be played out', () => {
+    let game = gameWith({ path: ruins(...Array(12).fill(1)) });
+    game = applyAction(game, { type: 'declare', direction: 'down' });
+    game = applyAction(game, { type: 'roll' });
+
+    const roll = game.lastRoll!;
+    expect(roll.travel).toHaveLength(roll.moved);
+    expect(roll.travel.at(-1)).toBe(game.players[0]!.position);
+  });
+});

@@ -187,15 +187,16 @@ function roll(state: GameState): GameState {
   const dice: [number, number] = [first.value + 1, second.value + 1];
   const total = dice[0] + dice[1];
   const moved = Math.max(0, total - player.holding.length);
-  const lastRoll: RollResult = { dice, total, moved };
 
-  const destination = resolveMovement(
+  const travel = resolveMovement(
     player,
     state.players,
     state.path.length,
     moved,
     player.direction,
   );
+  const destination = travel.at(-1) ?? player.position;
+  const lastRoll: RollResult = { dice, total, moved, travel };
 
   let next: GameState = { ...state, rng: second.state, lastRoll };
   next = withLog(
@@ -289,7 +290,9 @@ function endTurn(state: GameState): GameState {
     index = (index + 1) % state.players.length;
     if (!state.players[index]?.returned) break;
   }
-  return { ...state, currentPlayerIndex: index, phase: 'declare' };
+  // The dice belong to the turn that rolled them: clearing here stops the next
+  // diver opening their turn staring at somebody else's result.
+  return { ...state, currentPlayerIndex: index, phase: 'declare', lastRoll: null };
 }
 
 function closeRound(state: GameState, everyoneHome: boolean): GameState {

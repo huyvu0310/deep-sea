@@ -1,7 +1,7 @@
 import type { TreasureLevel } from '../../engine';
 import type { GameView, ViewCell } from '../../net/view';
 import { LEVEL_STYLES, TILES_PER_ROW, diverColor } from '../theme';
-import { usePrefersReducedMotion, useTravelTransitions } from '../use-motion';
+import { usePrefersReducedMotion, useTravelTransitions, type TravelPlan } from '../use-motion';
 import { AnchorIcon } from './icons';
 import { ChipFace } from './chip-face';
 
@@ -41,10 +41,18 @@ function zoneLabel(rows: Tile[][], index: number): { text: string; color: string
 }
 
 /** The trench: the submarine, then the dive route descending in serpentine rows. */
-export function Route({ state }: { state: GameView }) {
+export function Route({ state, swimDelayMs }: { state: GameView; swimDelayMs: number }) {
   const rows = toRows(state.path);
   const current = state.players[state.currentPlayerIndex];
-  useTravelTransitions(!usePrefersReducedMotion());
+
+  // Only the diver who just rolled swims a route; everyone else shuffling along
+  // (because a neighbour left a space) just slides across.
+  const swim: TravelPlan | null =
+    current && state.lastRoll && state.lastRoll.travel.length > 0
+      ? { travelId: current.id, waypoints: state.lastRoll.travel, delayMs: swimDelayMs }
+      : null;
+
+  useTravelTransitions(!usePrefersReducedMotion(), swim);
 
   const diversAt = (position: number) =>
     state.players
@@ -57,7 +65,7 @@ export function Route({ state }: { state: GameView }) {
 
   return (
     <div className="trench-map">
-      <div className="submarine-piece">
+      <div className="submarine-piece" data-space="0">
         <span className="sub-art">
           <AnchorIcon size={20} />
           SS-ORION
@@ -125,7 +133,10 @@ function PathTile({
   const empty = cell.kind === 'empty';
 
   return (
-    <div className={`path-tile${occupied ? ' path-tile-live' : ''}${empty ? ' path-tile-bare' : ''}`}>
+    <div
+      data-space={position}
+      className={`path-tile${occupied ? ' path-tile-live' : ''}${empty ? ' path-tile-bare' : ''}`}
+    >
       <span className="tile-index">#{position}</span>
       {cell.kind === 'treasure' ? (
         <ChipFace chips={cell.chips} />

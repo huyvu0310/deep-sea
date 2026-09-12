@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { DICE_SETTLE_MS } from './controls';
+import { useSoundCues } from '../use-sound-cues';
 import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
 import { AirHud } from './air-hud';
@@ -42,6 +44,7 @@ export function Table({
   const yourTurn = youId === null || active?.id === youId;
   const stillDiving = view.players.filter((p) => !p.returned).length;
   const colorOf = useMemo(() => makeColorOf(view.players), [view.players]);
+  useSoundCues(view);
   const playing = view.phase === 'declare' || view.phase === 'roll' || view.phase === 'action';
 
   return (
@@ -89,7 +92,7 @@ export function Table({
             </p>
           )}
 
-          <Route state={view} />
+          <Route state={view} swimDelayMs={DICE_SETTLE_MS} />
         </main>
       </div>
 

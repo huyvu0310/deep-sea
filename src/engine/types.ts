@@ -62,6 +62,12 @@ export interface RollResult {
   total: number;
   /** Spaces actually stepped, i.e. max(0, total - tokens held). */
   moved: number;
+  /**
+   * Every space passed through, in order, ending where the diver stopped.
+   * Empty when they were too laden to move. Lets the interface play the swim
+   * out space by space without re-deriving the rules.
+   */
+  travel: number[];
 }
 
 /** What happened when the air ran out, kept for the end-of-round screen. */

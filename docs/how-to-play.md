@@ -45,7 +45,8 @@ zone are still on the route, and how stacks score.
 2. **Air drains.** The shared tank drops by the number of chips you are
    carrying. Carry nothing, and you cost the group nothing.
 3. **Roll.** Two dice of 1–3, then **subtract one for every chip you carry**.
-   Six chips and you will not move at all.
+   Six chips and you will not move at all. The dice tumble, settle, and only
+   then does your diver set off — one space at a time.
 4. **Move.** Tiles with another diver on them are hopped over for free, so a
    crowded trench can fling you a long way.
 5. **Act, or don't.** On your tile you may **scoop** the chip (leaving bare
@@ -65,6 +66,8 @@ rest of the round.
 At an online table you only act on your own turn — the console shows
 "Waiting for …" when it is someone else's, and the server refuses a move sent
 out of turn. Notices in the corner tell you what the others just did.
+
+The speaker in the top right mutes the sound; the choice is remembered.
 
 **Click any diver's card** to see their chips — what they are carrying right
 now, and what they have banked, grouped by round. You will see each chip's

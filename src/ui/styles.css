@@ -1259,3 +1259,17 @@ button { font: inherit; }
 }
 
 .log-actor { width: 7px; height: 7px; margin-top: 5px; border-radius: 50%; flex: none; }
+
+.sound-toggle {
+  padding: 5px 9px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, opacity 140ms ease;
+}
+
+.sound-toggle:hover { background: var(--active); border-color: var(--teal); }
+.sound-toggle-off { opacity: 0.5; }

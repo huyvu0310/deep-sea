@@ -1,6 +1,29 @@
+import { useState } from 'react';
+import { isMuted, play, setMuted } from '../sound';
 import { SubIcon, UsersIcon } from './icons';
 
 /** Top bar: identity, which table this is, and how many divers are aboard. */
+function SoundToggle() {
+  const [muted, setLocalMuted] = useState(isMuted);
+
+  return (
+    <button
+      className={`sound-toggle${muted ? ' sound-toggle-off' : ''}`}
+      onClick={() => {
+        const next = !muted;
+        setMuted(next);
+        setLocalMuted(next);
+        // Confirm the choice audibly, which also unlocks audio on first use.
+        if (!next) play('scoop');
+      }}
+      title={muted ? 'Turn sound on' : 'Turn sound off'}
+      aria-pressed={!muted}
+    >
+      {muted ? '🔇' : '🔊'}
+    </button>
+  );
+}
+
 export function AppHeader({
   subtitle,
   code,
@@ -23,6 +46,7 @@ export function AppHeader({
       </div>
 
       <div className="lobby-stats">
+        <SoundToggle />
         <div className="stat-item">
           <span className="stat-label">TABLE:</span>
           <span className="code-badge">{code}</span>
