@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { GameView } from '../net/view';
 import { play } from './sound';
-
-/** Roughly how long one space of the swim takes, for pacing the step sounds. */
-const STEP_MS = 260;
+import { STEP_MS } from './use-motion';
+import { classify } from './table-events';
 
 /**
  * Plays the table's sounds off the game view, so a move made by anyone is
@@ -48,10 +47,11 @@ export function useSoundCues(view: GameView, swimHeld: boolean): void {
     seenLog.current = view.log.length;
 
     for (const entry of fresh) {
-      if (/scoops up/.test(entry.text)) play('scoop');
-      else if (/drops a treasure/.test(entry.text)) play('drop');
-      else if (/climbs aboard/.test(entry.text)) play('surface');
-      else if (/air runs out/.test(entry.text)) play('alarm');
+      const kind = classify(entry);
+      if (kind === 'scoop') play('scoop');
+      else if (kind === 'drop') play('drop');
+      else if (kind === 'surface') play('surface');
+      else if (kind === 'alarm') play('alarm');
     }
   }, [view.log]);
 }

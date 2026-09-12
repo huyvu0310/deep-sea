@@ -3,7 +3,15 @@ import type { GameView, ViewPlayer } from '../../net/view';
 import { diverColor } from '../theme';
 import { ChipFace } from './chip-face';
 import { DiverSheet } from './diver-sheet';
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronRightIcon, TrophyIcon, WeightIcon } from './icons';
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  TrophyIcon,
+  UserIcon,
+  WeightIcon,
+} from './icons';
 
 /**
  * The roster, one card per diver. Carried chips are shown on the card because
@@ -60,7 +68,17 @@ function PlayerCard({
     >
       <span className="card-main">
         <span className="card-left">
-          <span className="meeple-avatar" style={{ background: color }} aria-hidden="true" />
+          <span
+            className="meeple-avatar"
+            style={{
+              background: color,
+              // The diver on turn is lit from their own colour.
+              boxShadow: active ? `0 0 12px ${color}66` : undefined,
+            }}
+            aria-hidden="true"
+          >
+            <UserIcon size={18} />
+          </span>
           <span className="player-info">
             <span className="name-group">
               <span className="player-name">{player.name}</span>
@@ -70,13 +88,13 @@ function PlayerCard({
             <span className="player-meta">
               <span className="meta-item">
                 <TrophyIcon size={12} />
-                {player.score !== null
-                  ? `Score: ${player.score}`
-                  : `Banked: ${player.banked.length}`}
+                {player.score !== null ? 'Score:' : 'Banked:'}
+                <b>{player.score !== null ? player.score : player.banked.length}</b>
               </span>
               <span className={`meta-item${held > 0 ? ' meta-loaded' : ''}`}>
                 <WeightIcon size={12} />
-                Chips: {held}
+                Chips:
+                <b>{held}</b>
               </span>
             </span>
           </span>

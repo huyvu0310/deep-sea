@@ -1,8 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-/** How long a diver takes to cross one space, and the floor for a whole swim. */
-const STEP_MS = 260;
-const MIN_TRAVEL_MS = 420;
+/**
+ * How long a diver takes to cross one space. Exported because the step sounds
+ * are paced off the same number — two clocks would drift apart.
+ */
+export const STEP_MS = 500;
+/** A single-space move still takes a full step. */
+const MIN_TRAVEL_MS = STEP_MS;
 const TRAVEL_EASING = 'cubic-bezier(0.34, 1.16, 0.64, 1)';
 
 /**

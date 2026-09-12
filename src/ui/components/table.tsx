@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useSoundCues } from '../use-sound-cues';
 import { useRollPresentation } from '../use-roll-presentation';
+import { useActionPresentation } from '../use-action-presentation';
 import { usePrefersReducedMotion } from '../use-motion';
 import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
@@ -46,7 +47,9 @@ export function Table({
   const yourTurn = youId === null || active?.id === youId;
   const stillDiving = view.players.filter((p) => !p.returned).length;
   const colorOf = useMemo(() => makeColorOf(view.players), [view.players]);
-  const presentation = useRollPresentation(view, youId, !usePrefersReducedMotion());
+  const motion = !usePrefersReducedMotion();
+  const presentation = useRollPresentation(view, youId, motion);
+  const acted = useActionPresentation(view, motion);
   useSoundCues(view, presentation.swimHeld);
   const playing = view.phase === 'declare' || view.phase === 'roll' || view.phase === 'action';
 
@@ -113,6 +116,8 @@ export function Table({
         settled={presentation.settled}
         awaitingTap={presentation.awaitingTap}
         onDismiss={presentation.dismiss}
+        action={acted.show}
+        onDismissAction={acted.dismiss}
         colorOf={colorOf}
       />
     </div>

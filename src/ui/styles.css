@@ -277,7 +277,7 @@ button { font: inherit; }
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: background 380ms ease, border-color 380ms ease, box-shadow 380ms ease;
 }
 
 .player-card:hover { background: var(--active); }
@@ -299,19 +299,25 @@ button { font: inherit; }
 .player-card-active {
   background: var(--active);
   border-color: var(--teal);
-  box-shadow: 0 2px 12px rgba(0, 245, 212, 0.1);
+  box-shadow: 0 2px 16px rgba(0, 245, 212, 0.15);
 }
 
 .card-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
 .card-left, .player-info, .name-group, .player-meta, .card-right { box-sizing: border-box; }
 
 .meeple-avatar {
+  display: grid;
+  place-items: center;
   width: 32px;
   height: 32px;
   flex: none;
   border: 1.5px solid rgba(0, 0, 0, 0.2);
   border-radius: 8px;
+  color: #000;
+  transition: box-shadow 380ms ease;
 }
+
+.meeple-avatar svg { opacity: 0.55; }
 
 .player-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .name-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -346,7 +352,15 @@ button { font: inherit; }
   color: var(--muted);
 }
 
-.meta-loaded { color: #ff5e00; }
+/* The number is the thing being read; the label just names it. */
+.meta-item b {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.meta-loaded b { color: #ff5e00; }
+.meta-loaded svg { color: #ff5e00; }
 
 .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
 
@@ -356,9 +370,11 @@ button { font: inherit; }
   gap: 4px;
   padding: 4px 6px;
   border-radius: 4px;
+  font-family: var(--font-body);
   font-weight: 700;
   font-size: 10px;
   line-height: 13px;
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -1477,3 +1493,121 @@ button { font: inherit; }
   .cubes { gap: 26px; }
   .stage-result strong { font-size: 60px; }
 }
+
+/* ---------- scoop and turnaround flourishes ---------- */
+
+.turn-overlay-brief { background: rgba(1, 4, 14, 0.82); }
+
+.medallion-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 150px;
+}
+
+.medallion {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 126px;
+  height: 126px;
+  border: 3px solid;
+  border-radius: 50%;
+  font-size: 54px;
+  line-height: 1;
+  animation: medallion-rise 780ms cubic-bezier(0.34, 1.5, 0.64, 1) both;
+}
+
+.medallion b {
+  position: absolute;
+  right: 6px;
+  bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+}
+
+@keyframes medallion-rise {
+  from { opacity: 0; transform: translateY(28px) scale(0.7); }
+  to   { opacity: 1; transform: none; }
+}
+
+.medallion-ring {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border: 2px solid;
+  border-radius: 50%;
+  animation: ring-expand 950ms ease-out 180ms both;
+  pointer-events: none;
+}
+
+@keyframes ring-expand {
+  from { opacity: 0.9; transform: scale(0.75); }
+  to   { opacity: 0; transform: scale(1.75); }
+}
+
+.spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: spark-fly 700ms ease-out both;
+  pointer-events: none;
+}
+
+@keyframes spark-fly {
+  from { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  40%  { opacity: 1; }
+  to   { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(1); }
+}
+
+/* ---------- turning back ---------- */
+
+.uturn { position: relative; display: grid; place-items: center; width: 180px; height: 180px; }
+
+.uturn-arc {
+  stroke-dasharray: 330;
+  animation: arc-draw 850ms ease-out 100ms both;
+}
+
+@keyframes arc-draw {
+  from { stroke-dashoffset: 330; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.uturn-arrow {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 2px solid;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.14);
+  animation: arrow-turn 900ms cubic-bezier(0.34, 1.4, 0.64, 1) 260ms both;
+}
+
+@keyframes arrow-turn {
+  from { transform: rotate(180deg) scale(0.7); opacity: 0; }
+  to   { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
+.uturn-bubble {
+  position: absolute;
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.55);
+  animation: bubble-up 1.5s ease-in infinite;
+  pointer-events: none;
+}
+
+@keyframes bubble-up {
+  from { opacity: 0; transform: translateY(0); }
+  30%  { opacity: 0.9; }
+  to   { opacity: 0; transform: translateY(-150px); }
+}
+
+.uturn-note { max-width: 280px; text-align: center; }
