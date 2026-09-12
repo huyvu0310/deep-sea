@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { DICE_SETTLE_MS } from './controls';
 import { useSoundCues } from '../use-sound-cues';
+import { useRollPresentation } from '../use-roll-presentation';
+import { usePrefersReducedMotion } from '../use-motion';
 import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
 import { AirHud } from './air-hud';
@@ -45,7 +46,8 @@ export function Table({
   const yourTurn = youId === null || active?.id === youId;
   const stillDiving = view.players.filter((p) => !p.returned).length;
   const colorOf = useMemo(() => makeColorOf(view.players), [view.players]);
-  useSoundCues(view);
+  const presentation = useRollPresentation(view, youId, !usePrefersReducedMotion());
+  useSoundCues(view, presentation.swimHeld);
   const playing = view.phase === 'declare' || view.phase === 'roll' || view.phase === 'action';
 
   return (
@@ -93,7 +95,7 @@ export function Table({
             </p>
           )}
 
-          <Route state={view} swimDelayMs={DICE_SETTLE_MS} />
+          <Route state={view} swimHeld={presentation.swimHeld} />
         </main>
       </div>
 
@@ -105,7 +107,14 @@ export function Table({
       {view.phase === 'gameOver' && <GameOver state={view} onRestart={onRestart} />}
 
       <ActionFeed entries={view.log} youId={youId} colorOf={colorOf} />
-      <TurnOverlay view={view} colorOf={colorOf} />
+      <TurnOverlay
+        view={view}
+        roll={presentation.roll}
+        settled={presentation.settled}
+        awaitingTap={presentation.awaitingTap}
+        onDismiss={presentation.dismiss}
+        colorOf={colorOf}
+      />
     </div>
   );
 }

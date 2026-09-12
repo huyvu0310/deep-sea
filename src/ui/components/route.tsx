@@ -41,15 +41,15 @@ function zoneLabel(rows: Tile[][], index: number): { text: string; color: string
 }
 
 /** The trench: the submarine, then the dive route descending in serpentine rows. */
-export function Route({ state, swimDelayMs }: { state: GameView; swimDelayMs: number }) {
+export function Route({ state, swimHeld }: { state: GameView; swimHeld: boolean }) {
   const rows = toRows(state.path);
   const current = state.players[state.currentPlayerIndex];
 
-  // Only the diver who just rolled swims a route; everyone else shuffling along
+  // Only the diver who rolled swims a route; everyone else shuffling along
   // (because a neighbour left a space) just slides across.
   const swim: TravelPlan | null =
-    current && state.lastRoll && state.lastRoll.travel.length > 0
-      ? { travelId: current.id, waypoints: state.lastRoll.travel, delayMs: swimDelayMs }
+    state.lastRoll && state.lastRoll.travel.length > 0
+      ? { travelId: state.lastRoll.actorId, waypoints: state.lastRoll.travel, held: swimHeld }
       : null;
 
   useTravelTransitions(!usePrefersReducedMotion(), swim);

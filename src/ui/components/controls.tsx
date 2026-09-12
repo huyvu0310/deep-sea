@@ -43,12 +43,8 @@ export function Controls({ state, dispatch, error, yourTurn }: ControlsProps) {
   );
 }
 
-/**
- * How long the dice tumble before showing what was actually rolled. The board
- * waits this long before swimming the diver, so the result is known first.
- */
-export const DICE_SETTLE_MS = 1900;
-const TUMBLE_MS = DICE_SETTLE_MS;
+/** How long the inline dice tumble before showing what was rolled. */
+const TUMBLE_MS = 900;
 const TUMBLE_FRAME_MS = 80;
 
 /**

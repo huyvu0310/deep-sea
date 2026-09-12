@@ -45,9 +45,10 @@ zone are still on the route, and how stacks score.
 2. **Air drains.** The shared tank drops by the number of chips you are
    carrying. Carry nothing, and you cost the group nothing.
 3. **Roll.** Two dice of 1–3, then **subtract one for every chip you carry**.
-   Six chips and you will not move at all. The roll plays out over the board —
-   the dice tumble and land, then the route lights up space by space. Everyone
-   at the table sees it, and a tap skips it.
+   Six chips and you will not move at all. The dice fill the screen, land on a
+   result, and wait — tap to continue, and your diver then swims the route on
+   the board one space at a time. Other players' rolls clear themselves, so you
+   never have to tap through somebody else's turn.
 4. **Move.** Tiles with another diver on them are hopped over for free, so a
    crowded trench can fling you a long way.
 5. **Act, or don't.** On your tile you may **scoop** the chip (leaving bare

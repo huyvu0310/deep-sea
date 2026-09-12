@@ -6,14 +6,14 @@ const MIN_TRAVEL_MS = 420;
 const TRAVEL_EASING = 'cubic-bezier(0.34, 1.16, 0.64, 1)';
 
 /**
- * A swim to play out space by space: which token is moving, the spaces it
- * passes through, and how long to hold before starting — long enough for the
- * dice to settle first, so the result is known before the diver sets off.
+ * A swim to play out space by space: which token is moving and the spaces it
+ * passes through. While `held` the swim is created but paused on its starting
+ * space, so the diver sets off only once the roll has been taken in.
  */
 export interface TravelPlan {
   travelId: string;
   waypoints: number[];
-  delayMs: number;
+  held: boolean;
 }
 
 /** Centre of a route space, or of the submarine for space 0. */
@@ -53,6 +53,7 @@ export function usePrefersReducedMotion(): boolean {
 export function useTravelTransitions(enabled: boolean, plan: TravelPlan | null = null): void {
   const previous = useRef(new Map<string, DOMRect>());
   const planPlayed = useRef<string | null>(null);
+  const holding = useRef<Animation | null>(null);
 
   useLayoutEffect(() => {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-travel-id]'));
@@ -64,9 +65,17 @@ export function useTravelTransitions(enabled: boolean, plan: TravelPlan | null =
       if (!id) continue;
 
       const rect = node.getBoundingClientRect();
-      current.set(id, rect);
-
       const before = previous.current.get(id);
+
+      // A token already swimming for this plan is measured mid-flight: its rect
+      // is displaced by that animation, so it is neither a baseline worth
+      // keeping nor a reason to start a second, competing one.
+      if (plan && plan.travelId === id && planKey !== null && planPlayed.current === planKey) {
+        current.set(id, before ?? rect);
+        continue;
+      }
+
+      current.set(id, rect);
       if (!enabled || !before) continue;
 
       const dx = before.left - rect.left;
@@ -81,13 +90,17 @@ export function useTravelTransitions(enabled: boolean, plan: TravelPlan | null =
         planPlayed.current = planKey;
         const frames = swimFrames(plan, rect, dx, dy);
         if (frames) {
-          node.animate(frames, {
+          const swim = node.animate(frames, {
             duration: Math.max(MIN_TRAVEL_MS, plan.waypoints.length * STEP_MS),
-            delay: plan.delayMs,
-            // Hold the diver at the space they left while the dice are settling.
+            // Keeps the diver drawn at the space they left rather than the one
+            // the board has already moved them to.
             fill: 'backwards',
             easing: 'linear',
           });
+          if (plan.held) {
+            swim.pause();
+            holding.current = swim;
+          }
           continue;
         }
       }
@@ -100,6 +113,14 @@ export function useTravelTransitions(enabled: boolean, plan: TravelPlan | null =
 
     previous.current = current;
   });
+
+  // Let a held swim go the moment the roll has been acknowledged.
+  const held = plan?.held ?? false;
+  useEffect(() => {
+    if (held || !holding.current) return;
+    holding.current.play();
+    holding.current = null;
+  }, [held]);
 }
 
 /**
