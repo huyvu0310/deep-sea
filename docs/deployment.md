@@ -71,12 +71,22 @@ with a 401 and the client shows "Connection lost".
 | | |
 | --- | --- |
 | Server | `deep-sea-server` on Render — `https://deep-sea-server.onrender.com` |
-| Client | `deep-sea` on Vercel — `https://deep-sea-vu-duongs-projects-58c07326.vercel.app` |
+| Client | `deep-sea` on Vercel — **`https://deep-sea-snowy.vercel.app`** |
 | Repo | `huyvu0310/deep-sea`, both hosts auto-deploy from `main` |
 
-`ALLOWED_ORIGINS` on Render is set to the Vercel production alias above. Note
-that `deep-sea.vercel.app` belongs to an unrelated project — the alias for this
-one carries the team suffix.
+`ALLOWED_ORIGINS` lists both the public URL above and the team-scoped alias
+`deep-sea-vu-duongs-projects-58c07326.vercel.app`.
+
+**Use the origin players actually visit.** A Vercel project answers on several
+hostnames — the short public alias, a team-scoped alias, and a fresh
+per-deployment URL each build — and the browser sends whichever one the page was
+loaded from as the `Origin`. Allowlisting the wrong one fails exactly like a
+missing `VITE_WS_URL`: the page loads, then the socket is refused with a 401 and
+the client reports "Connection lost". Check the address bar, not the dashboard.
+
+Note also that Vercel's Standard deployment protection guards per-deployment
+URLs and previews but leaves the public production alias reachable, so the short
+URL works for guests without turning protection off.
 
 ## Checking it works
 
