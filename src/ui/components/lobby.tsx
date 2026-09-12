@@ -12,6 +12,7 @@ export function Lobby({
   youId,
   onStart,
   onLeave,
+  banner,
 }: {
   code: string;
   players: LobbyPlayer[];
@@ -20,6 +21,7 @@ export function Lobby({
   youId: string | null;
   onStart: (seed: string) => void;
   onLeave: () => void;
+  banner?: string | null;
 }) {
   const [seed, setSeed] = useState('');
   const [copied, setCopied] = useState(false);
@@ -39,6 +41,7 @@ export function Lobby({
     <div className="setup">
       <div className="setup-card">
         <h1>Table {code}</h1>
+        {banner && <p className="banner">{banner}</p>}
         <p className="setup-blurb">
           Share this code with the other divers. Everyone plays from their own device.
         </p>

@@ -162,7 +162,9 @@ function OnlineTable({
         leaveLabel="LEAVE TABLE"
         tableCode={code ?? '----'}
         mode="ONLINE TABLE"
-        banner={status === 'closed' ? 'Disconnected — rejoin from the menu.' : null}
+        banner={
+          status === 'reconnecting' ? 'Connection lost — getting you back to the table…' : null
+        }
       />
     );
   }
@@ -177,16 +179,23 @@ function OnlineTable({
         youId={seatId}
         onStart={start}
         onLeave={onLeave}
+        banner={
+          status === 'reconnecting' ? 'Connection lost — getting you back to the table…' : null
+        }
       />
     );
   }
 
+  const reconnecting = status === 'reconnecting';
   return (
     <div className="setup">
       <div className="setup-card">
-        <h1>{status === 'closed' ? 'Connection lost' : 'Surfacing…'}</h1>
+        <h1>{reconnecting ? 'Connection lost' : 'Surfacing…'}</h1>
         <p className="setup-blurb">
-          {error ?? (status === 'closed' ? 'The table could not be reached.' : 'Contacting the table.')}
+          {error ??
+            (reconnecting
+              ? 'Trying to reach the table again. Your seat is being held.'
+              : 'Contacting the table.')}
         </p>
         <button className="btn btn-lg" onClick={onLeave}>
           Back to the menu
