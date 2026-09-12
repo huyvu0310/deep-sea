@@ -13,6 +13,7 @@ import { ActionFeed } from './action-feed';
 import { LogPanel, makeColorOf } from './log-panel';
 import { PlayerList } from './player-list';
 import { Route } from './route';
+import { SubmarineDock } from './submarine-dock';
 import { GameOver, RoundEnd } from './round-end';
 import { TurnOverlay } from './turn-overlay';
 
@@ -76,7 +77,10 @@ export function Table({
         <main className="board-panel">
           {/* The shared tank sits above the submarine, where every diver's
               attention already is, rather than buried in the side panel. */}
+          {/* The tank belongs to the submarine, so the two read as one panel
+              and the trench gets the height back. */}
           <div className="board-hud">
+            <SubmarineDock state={view} />
             <AirHud state={view} />
           </div>
 

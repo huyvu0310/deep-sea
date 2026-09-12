@@ -2,8 +2,8 @@ import type { TreasureLevel } from '../../engine';
 import type { GameView, ViewCell } from '../../net/view';
 import { LEVEL_STYLES, TILES_PER_ROW, diverColor } from '../theme';
 import { usePrefersReducedMotion, useTravelTransitions, type TravelPlan } from '../use-motion';
-import { AnchorIcon } from './icons';
 import { ChipFace } from './chip-face';
+import { Meeple } from './meeple';
 
 interface Tile {
   position: number;
@@ -59,40 +59,8 @@ export function Route({ state, swimHeld }: { state: GameView; swimHeld: boolean 
       .map((player, index) => ({ player, index }))
       .filter(({ player }) => player.position === position && !player.returned);
 
-  const aboard = state.players
-    .map((player, index) => ({ player, index }))
-    .filter(({ player }) => player.returned);
-
   return (
     <div className="trench-map">
-      <div className="submarine-piece" data-space="0">
-        <span className="sub-art">
-          <AnchorIcon size={20} />
-          SS-ORION
-        </span>
-        <span className="sub-sub">DOCK / CARGO BAY</span>
-        <span className="docked-meeples">
-          {diversAt(0).map(({ player, index }) => (
-            <Meeple
-              key={player.id}
-              id={player.id}
-              name={player.name}
-              color={diverColor(index)}
-              active={player.id === current?.id}
-            />
-          ))}
-          {aboard.map(({ player, index }) => (
-            <Meeple
-              key={player.id}
-              id={player.id}
-              name={player.name}
-              color={diverColor(index)}
-              safe
-            />
-          ))}
-        </span>
-      </div>
-
       {rows.map((row, rowIndex) => (
         <div key={rowIndex} className="path-block">
           <div className={`path-row${rowIndex % 2 === 1 ? ' path-row-reversed' : ''}`}>
@@ -172,30 +140,5 @@ function Connector({
     <div className={`connector${flip ? ' connector-right' : ''}`}>
       <span style={{ color: zone.color }}>{zone.text}</span>
     </div>
-  );
-}
-
-function Meeple({
-  id,
-  name,
-  color,
-  active = false,
-  safe = false,
-}: {
-  id: string;
-  name: string;
-  color: string;
-  active?: boolean;
-  safe?: boolean;
-}) {
-  return (
-    <i
-      // Tagged so the token animates across tiles instead of jumping; the id
-      // must follow the diver, since the element itself is replaced each move.
-      data-travel-id={id}
-      className={`meeple${active ? ' meeple-active' : ''}${safe ? ' meeple-safe' : ''}`}
-      style={{ background: color }}
-      title={safe ? `${name} — safely aboard` : name}
-    />
   );
 }

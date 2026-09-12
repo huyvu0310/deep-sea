@@ -149,13 +149,14 @@ button { font: inherit; }
 /* Air supply and the guide sit on one row, matched to the trench width. */
 .board-hud {
   display: flex;
-  align-items: stretch;
-  gap: 12px;
+  flex-direction: column;
   width: 100%;
   max-width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 8px 26px rgba(255, 195, 0, 0.12);
 }
 
-.board-hud .air-hud { flex: 1; min-width: 0; }
+.board-hud .air-hud { border-radius: 0 0 12px 12px; border-top: none; }
 
 @media (max-width: 560px) {
   .guide-button span { display: none; }
@@ -559,39 +560,40 @@ button { font: inherit; }
   max-width: 480px;
 }
 
-.submarine-piece {
+/* The dock sits on top of the air gauge as one panel. */
+.sub-dock {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 160px;
-  padding: 14px;
-  background: #ffc300;
-  border: 2px solid #000;
-  border-radius: 16px;
-  box-shadow: 0 8px 16px rgba(255, 195, 0, 0.2);
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 14px;
+  background: linear-gradient(180deg, #ffc300, #e9a83c);
+  border: 1px solid #000;
+  border-radius: 12px 12px 0 0;
   color: var(--abyss);
 }
 
-.sub-art {
+.sub-name {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 13px;
+  letter-spacing: 0.04em;
 }
 
-.sub-sub { font-size: 11px; font-weight: 600; color: rgba(2, 6, 16, 0.8); }
+.sub-berths { display: flex; align-items: center; gap: 5px; min-height: 12px; }
 
-.docked-meeples {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  justify-content: center;
-  min-height: 10px;
+.sub-berths em {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(2, 6, 16, 0.62);
 }
+
+.sub-berths .meeple { border-color: rgba(0, 0, 0, 0.45); }
 
 .path-block { display: flex; flex-direction: column; align-items: center; width: 100%; }
 
