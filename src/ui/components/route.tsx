@@ -4,7 +4,6 @@ import { LEVEL_STYLES, TILES_PER_ROW, diverColor } from '../theme';
 import { usePrefersReducedMotion, useTravelTransitions } from '../use-motion';
 import { AnchorIcon } from './icons';
 import { ChipFace } from './chip-face';
-import { ChipGuide } from './chip-guide';
 
 interface Tile {
   position: number;
@@ -58,8 +57,6 @@ export function Route({ state }: { state: GameView }) {
 
   return (
     <div className="trench-map">
-      <ChipGuide path={state.path} />
-
       <div className="submarine-piece">
         <span className="sub-art">
           <AnchorIcon size={20} />

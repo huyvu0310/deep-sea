@@ -2,6 +2,7 @@ import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
 import { AirHud } from './air-hud';
 import { AppHeader } from './app-header';
+import { ChipGuide } from './chip-guide';
 import { Controls } from './controls';
 import { LogPanel } from './log-panel';
 import { PlayerList } from './player-list';
@@ -50,7 +51,6 @@ export function Table({
       <div className="dashboard">
         <aside className="left-panel">
           {banner && <p className="banner">{banner}</p>}
-          <AirHud state={view} />
           <PlayerList state={view} {...(youId ? { youId } : {})} />
           <Controls state={view} dispatch={dispatch} error={error} yourTurn={yourTurn} />
           <LogPanel lines={view.log} />
@@ -60,6 +60,12 @@ export function Table({
         </aside>
 
         <main className="board-panel">
+          {/* The shared tank sits above the submarine, where every diver's
+              attention already is, rather than buried in the side panel. */}
+          <div className="board-hud">
+            <AirHud state={view} />
+            <ChipGuide path={view.path} />
+          </div>
           <Route state={view} />
         </main>
       </div>

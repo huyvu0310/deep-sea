@@ -3,6 +3,7 @@ import type { TreasureLevel } from '../../engine';
 import { CHIPS_PER_LEVEL, LEVEL_VALUE_RANGES } from '../../engine';
 import type { ViewCell } from '../../net/view';
 import { LEVELS, LEVEL_STYLES } from '../theme';
+import { InfoIcon } from './icons';
 
 /** Every value in a level, listed the way the chips are printed: two of each. */
 function valuesIn(level: TreasureLevel): number[] {
@@ -26,45 +27,24 @@ function countByLevel(path: ViewCell[]): Record<TreasureLevel, number> {
 }
 
 /**
- * Legend above the trench. The point range sits inline so the common question —
- * "what is a red chip worth?" — needs no click, and the full reference opens
- * behind the info button.
+ * Opens the depth-zone reference. The board stays clear of a permanent legend,
+ * so this button is the way in — labelled, not just an icon, because a bare
+ * glyph gives a new player nothing to aim at.
  */
 export function ChipGuide({ path }: { path: ViewCell[] }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <div className="zone-legend">
-        <div className="legend-head">
-          <span className="legend-title">DEPTH ZONES</span>
-          <button
-            className="legend-info"
-            onClick={() => setOpen(true)}
-            aria-haspopup="dialog"
-            title="What is each chip worth?"
-          >
-            <span aria-hidden="true">ⓘ</span> Chip values
-          </button>
-        </div>
-
-        <div className="legend-grid">
-          {LEVELS.map((level) => {
-            const style = LEVEL_STYLES[level];
-            return (
-              <span key={level} className="legend-item">
-                <i className="legend-badge" style={{ background: style.color }}>
-                  {style.glyph}
-                </i>
-                <span className="legend-text">
-                  <b>{pointRange(level)} pts</b>
-                  <small>{style.depth}</small>
-                </span>
-              </span>
-            );
-          })}
-        </div>
-      </div>
+      <button
+        className="guide-button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        title="Depth zones and what each chip is worth"
+      >
+        <InfoIcon size={16} />
+        <span>GUIDE</span>
+      </button>
 
       {open && <ChipGuideDialog path={path} onClose={() => setOpen(false)} />}
     </>
