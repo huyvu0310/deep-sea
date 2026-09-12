@@ -14,6 +14,8 @@ interface Seat {
   /** The account sitting here, when the server has a database to know accounts. */
   userId: string | null;
   socket: WebSocket | null;
+  /** When this chair was last left empty, so a long absence can be noticed. */
+  awaySince: number | null;
 }
 
 /**
@@ -67,6 +69,7 @@ export class Room {
       token: randomUUID(),
       userId,
       socket,
+      awaySince: null,
     };
     this.seats.push(seat);
     this.hostId ??= seat.id;
@@ -101,6 +104,7 @@ export class Room {
     // that can no longer act, so the older socket is let go.
     if (seat.socket && seat.socket !== socket) seat.socket.close();
     seat.socket = socket;
+    seat.awaySince = null;
     return seat;
   }
 
@@ -109,6 +113,7 @@ export class Room {
     const seat = this.seats.find((s) => s.socket === socket);
     if (!seat) return;
     seat.socket = null;
+    seat.awaySince = Date.now();
 
     // Before the dive starts an empty chair is just removed; mid-game the seat
     // is held open because the diver still has treasure and a position.
@@ -185,6 +190,62 @@ export class Room {
     return this.seats.find((s) => s.socket === socket);
   }
 
+  /**
+   * Play a turn for a diver who has gone.
+   *
+   * Only the active seat may act, so someone who closes their laptop mid-dive
+   * would otherwise hold the table for as long as everyone else is willing to
+   * wait. Once they have been away past the grace period the crew take the
+   * helm and send them home: turn back, swim, touch nothing. That is a legal
+   * turn played the cautious way, so the rules still decide whether they make
+   * it back with their haul or drown holding it.
+   *
+   * Answers whether anything happened, so the caller knows to tell the table.
+   */
+  nudgeAbsent(graceMs: number, now = Date.now()): boolean {
+    const before = this.game;
+    if (!before) return false;
+    if (before.phase !== 'declare' && before.phase !== 'roll' && before.phase !== 'action') {
+      return false;
+    }
+
+    const active = before.players[before.currentPlayerIndex];
+    if (!active) return false;
+
+    const seat = this.seats.find((s) => s.id === active.id);
+    if (!seat || seat.socket || seat.awaySince === null) return false;
+    if (now - seat.awaySince < graceMs) return false;
+
+    // With nobody connected there is no table being held up, and a game left
+    // to itself should not play itself out.
+    if (this.seats.every((s) => s.socket === null)) return false;
+
+    // Narration rather than a rules effect: the engine has no notion of a
+    // connection, so the reason is said here instead of inside an action.
+    this.game = {
+      ...before,
+      log: [
+        ...before.log,
+        { text: `${active.name} is away — the crew send them up.`, actorId: active.id },
+      ],
+    };
+
+    try {
+      if (this.game.phase === 'declare') {
+        this.game = applyAction(this.game, { type: 'declare', direction: 'up' });
+      }
+      if (this.game.phase === 'roll') this.game = applyAction(this.game, { type: 'roll' });
+      if (this.game.phase === 'action') this.game = applyAction(this.game, { type: 'pass' });
+    } catch {
+      // Better to leave the turn untouched than half played. The table is no
+      // worse off than before, and the next sweep will try again.
+      this.game = before;
+      return false;
+    }
+
+    return true;
+  }
+
   /** Write the table down, so it can be rebuilt after a restart. */
   snapshot(): RoomSnapshot {
     return {
@@ -215,6 +276,9 @@ export class Room {
       token: randomUUID(),
       userId: seat.userId,
       socket: null,
+      // Nobody is connected to a table just read back from storage, so the
+      // grace period starts now rather than from whenever they last left.
+      awaySince: Date.now(),
     }));
     return room;
   }

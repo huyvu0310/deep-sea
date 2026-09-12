@@ -19,6 +19,14 @@ const CLIENT_BUILD = fileURLToPath(new URL('../dist', import.meta.url));
 /** How often expired sessions and long-abandoned tables are cleared out. */
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000;
 
+/**
+ * How long a diver may be gone before the table stops waiting for them. Long
+ * enough to cover a refresh, a tunnel or a phone locking itself; short enough
+ * that the others do not give up on the game.
+ */
+const ABSENT_GRACE_MS = 45_000;
+const NUDGE_INTERVAL_MS = 5_000;
+
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -208,12 +216,30 @@ wss.on('connection', (socket) => {
   });
 });
 
+/** Keep play moving past anyone who has dropped out for good. */
+function watchForAbsentees(): void {
+  setInterval(() => {
+    for (const room of registry.nudge(ABSENT_GRACE_MS)) {
+      room.broadcast();
+      const state = room.state;
+      if (state) {
+        void saveGame(room.code, state).catch(() => {
+          // The table has already moved on in memory; a failed write will be
+          // put right by the next move that lands.
+        });
+      }
+    }
+  }, NUDGE_INTERVAL_MS).unref();
+}
+
 async function boot(): Promise<void> {
   if (dbEnabled) {
     await migrate();
     await sweep();
     setInterval(() => void sweep().catch(() => {}), SWEEP_INTERVAL_MS).unref();
   }
+
+  watchForAbsentees();
 
   http.listen(PORT, () => {
     console.log(`Deep Sea Adventure server listening on port ${PORT} at ${WS_PATH}`);

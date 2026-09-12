@@ -59,6 +59,18 @@ export class RoomRegistry {
     }
   }
 
+  /**
+   * Give every live table a chance to move past a diver who has gone, and
+   * answer with the ones where something happened.
+   */
+  nudge(graceMs: number, now = Date.now()): Room[] {
+    const moved: Room[] = [];
+    for (const room of this.rooms.values()) {
+      if (room.nudgeAbsent(graceMs, now)) moved.push(room);
+    }
+    return moved;
+  }
+
   /** Close a table for good, in memory and in storage. */
   async close(code: string): Promise<void> {
     this.rooms.delete(code);
