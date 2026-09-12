@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
 import type { GameAction } from '../../engine';
 import type { GameView } from '../../net/view';
+import { usePrefersReducedMotion } from '../use-motion';
 import { LEVEL_STYLES } from '../theme';
 import { ChipFace } from './chip-face';
 import { ArrowDownIcon, DiceIcon, ScoopIcon, TrashIcon, TrendingUpIcon } from './icons';
@@ -41,20 +43,57 @@ export function Controls({ state, dispatch, error, yourTurn }: ControlsProps) {
   );
 }
 
-/** Shows the last roll: how far the diver swam, and the raw dice behind it. */
+/** How long the dice tumble before showing what was actually rolled. */
+const TUMBLE_MS = 460;
+const TUMBLE_FRAME_MS = 70;
+
+/**
+ * Shows the last roll: how far the diver swam, and the raw dice behind it.
+ *
+ * The engine has already resolved the roll by the time this renders, so the
+ * tumble is pure theatre over a known result — it never changes the outcome,
+ * and it is skipped entirely for viewers who asked for reduced motion.
+ */
 function DiceDeck({ state }: { state: GameView }) {
   const roll = state.lastRoll;
+  const reducedMotion = usePrefersReducedMotion();
+  const [tumbling, setTumbling] = useState(false);
+  const [faces, setFaces] = useState<[number, number]>([1, 1]);
+  const lastSeen = useRef(state.lastRoll);
+
+  useEffect(() => {
+    if (state.lastRoll === lastSeen.current) return;
+    lastSeen.current = state.lastRoll;
+    if (!state.lastRoll || reducedMotion) return;
+
+    setTumbling(true);
+    const face = () => (Math.floor(Math.random() * 3) + 1) as number;
+    const spin = setInterval(() => setFaces([face(), face()]), TUMBLE_FRAME_MS);
+    const settle = setTimeout(() => {
+      clearInterval(spin);
+      setTumbling(false);
+    }, TUMBLE_MS);
+
+    return () => {
+      clearInterval(spin);
+      clearTimeout(settle);
+    };
+  }, [state.lastRoll, reducedMotion]);
+
+  const shown: [number | null, number | null] = tumbling
+    ? faces
+    : [roll?.dice[0] ?? null, roll?.dice[1] ?? null];
 
   return (
     <div className="dice-deck">
       <div className="dice-visuals">
-        <Die value={roll?.dice[0] ?? null} />
-        <Die value={roll?.dice[1] ?? null} />
+        <Die value={shown[0]} tumbling={tumbling} />
+        <Die value={shown[1]} tumbling={tumbling} />
       </div>
       <div className="dice-report">
         <span className="dice-label">DICE ROLL RESULT</span>
-        {roll ? (
-          <span className="dice-sum">
+        {roll && !tumbling ? (
+          <span className="dice-sum dice-sum-settled">
             <strong>
               {roll.moved} {roll.moved === 1 ? 'Space' : 'Spaces'}
             </strong>
@@ -65,8 +104,8 @@ function DiceDeck({ state }: { state: GameView }) {
           </span>
         ) : (
           <span className="dice-sum">
-            <strong>—</strong>
-            <small>awaiting the first roll</small>
+            <strong>{tumbling ? '…' : '—'}</strong>
+            <small>{tumbling ? 'rolling' : 'awaiting the first roll'}</small>
           </span>
         )}
       </div>
@@ -77,9 +116,11 @@ function DiceDeck({ state }: { state: GameView }) {
 /** Pip positions on a 3×3 grid; the dice in this game only ever show 1–3. */
 const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8] };
 
-function Die({ value }: { value: number | null }) {
+function Die({ value, tumbling = false }: { value: number | null; tumbling?: boolean }) {
   return (
-    <span className={`die${value === null ? ' die-idle' : ''}`}>
+    <span
+      className={`die${value === null ? ' die-idle' : ''}${tumbling ? ' die-tumbling' : ''}`}
+    >
       {Array.from({ length: 9 }, (_, i) => (
         <i key={i} className={value !== null && PIPS[value]?.includes(i) ? 'pip pip-on' : 'pip'} />
       ))}

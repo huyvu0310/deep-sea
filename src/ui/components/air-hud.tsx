@@ -1,4 +1,5 @@
 import type { GameView } from '../../net/view';
+import { useFlashOnChange } from '../use-motion';
 import { WindIcon } from './icons';
 
 /** The shared tank — the clock every diver is racing. */
@@ -6,9 +7,13 @@ export function AirHud({ state }: { state: GameView }) {
   const pct = Math.max(0, Math.min(100, (state.air / state.startingAir) * 100));
   const drain = state.players[state.currentPlayerIndex]?.holding.length ?? 0;
   const low = state.air <= 6;
+  // Air only ever falls, so any change is a loss worth flagging.
+  const justDropped = useFlashOnChange(state.air);
 
   return (
-    <section className={`air-hud${low ? ' air-hud-low' : ''}`}>
+    <section
+      className={`air-hud${low ? ' air-hud-low' : ''}${justDropped ? ' air-hud-drop' : ''}`}
+    >
       <div className="hud-header">
         <span className="label-group">
           <WindIcon size={18} />
