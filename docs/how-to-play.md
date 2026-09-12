@@ -54,6 +54,11 @@ zone are still on the route, and how stacks score.
 Reach the submarine and you are safe: your haul is banked and you sit out the
 rest of the round.
 
+**Click any diver's card** to see their chips — what they are carrying right
+now, and what they have banked, grouped by round. You will see each chip's
+depth zone (everyone watched which tile it came off) but not its value until
+the expedition ends.
+
 ## When the air runs out
 
 The round ends the moment the tank hits zero (the current diver finishes their

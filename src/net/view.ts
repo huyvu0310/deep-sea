@@ -23,6 +23,12 @@ export interface ViewChip {
 
 export type ViewCell = { kind: 'treasure'; chips: ViewChip[] } | { kind: 'empty' };
 
+/** A haul carried safely aboard, kept with the round it was landed in. */
+export interface ViewBanked {
+  round: number;
+  chips: ViewChip[];
+}
+
 export interface ViewPlayer {
   id: string;
   name: string;
@@ -30,7 +36,7 @@ export interface ViewPlayer {
   direction: Direction;
   returned: boolean;
   holding: ViewChip[][];
-  banked: ViewChip[][];
+  banked: ViewBanked[];
   /** null until the expedition ends. */
   score: number | null;
 }
@@ -91,7 +97,10 @@ export function toView(state: GameState): GameView {
       direction: player.direction,
       returned: player.returned,
       holding: player.holding.map((treasure) => hide(treasure, reveal)),
-      banked: player.banked.map((entry) => hide(entry.chips, reveal)),
+      banked: player.banked.map((entry) => ({
+        round: entry.round,
+        chips: hide(entry.chips, reveal),
+      })),
       score: reveal ? playerScore(player) : null,
     })),
     currentPlayerIndex: state.currentPlayerIndex,

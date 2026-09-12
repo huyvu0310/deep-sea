@@ -101,8 +101,8 @@ export function GameOver({ state, onRestart }: { state: GameView; onRestart: (()
                 <span className="scores-rank">{row.rank}</span>
                 <span className="scores-name">{row.name}</span>
                 <span className="scores-chips">
-                  {player?.banked.map((chips, i) => (
-                    <ChipFace key={i} chips={chips} size="sm" />
+                  {player?.banked.map((entry, i) => (
+                    <ChipFace key={i} chips={entry.chips} size="sm" />
                   ))}
                 </span>
                 <strong className="scores-value">{row.score}</strong>

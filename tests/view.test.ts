@@ -37,13 +37,27 @@ describe('the player-facing view', () => {
     expect(JSON.stringify(view)).not.toContain('"value":15');
   });
 
+  it('keeps the round a haul was landed in, so it can be grouped', () => {
+    const game = createGame({ players: [{ id: 'a', name: 'Ama' }, { id: 'b', name: 'Bo' }], seed: 7 });
+    game.players[0]!.banked = [
+      { round: 1, chips: [{ level: 1, value: 2 }] },
+      { round: 2, chips: [{ level: 4, value: 14 }] },
+    ];
+    const view = toView(game);
+    expect(view.players[0]!.banked.map((entry) => entry.round)).toEqual([1, 2]);
+    expect(view.players[0]!.banked.map((entry) => entry.chips[0]!.level)).toEqual([1, 4]);
+    expect(view.players[0]!.banked.every((entry) => entry.chips.every((c) => c.value === null))).toBe(
+      true,
+    );
+  });
+
   it('turns every chip face up once the expedition ends', () => {
     const game = createGame({ players: [{ id: 'a', name: 'Ama' }, { id: 'b', name: 'Bo' }], seed: 7 });
     const finished = { ...game, phase: 'gameOver' as const };
     finished.players[0]!.banked = [{ round: 1, chips: [{ level: 4, value: 15 }] }];
 
     const view = toView(finished);
-    expect(view.players[0]!.banked[0]![0]!.value).toBe(15);
+    expect(view.players[0]!.banked[0]!.chips[0]!.value).toBe(15);
     expect(view.players[0]!.score).toBe(15);
     expect(view.standings![0]!.score).toBe(15);
   });
