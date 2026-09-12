@@ -322,14 +322,37 @@ button { font: inherit; }
 
 .card-chevron { flex: none; color: var(--dim); transition: color 120ms ease; }
 
-.card-chips {
+/* The hold, drawn as a tray. A lone chip on a bare row read as an afterthought;
+   giving it a floor and a label makes the weight a diver is carrying legible at
+   a glance, which is the number the whole game turns on. */
+.cargo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(2, 6, 16, 0.55);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+}
+
+.cargo-label {
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--dim);
+}
+
+.cargo-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--edge);
-  width: 100%;
+  gap: 6px;
+  min-width: 0;
 }
+
+.player-card-active .cargo { border-color: rgba(0, 245, 212, 0.22); }
 
 .player-card-active {
   background: var(--active);
@@ -663,7 +686,7 @@ button { font: inherit; }
   flex: none;
 }
 
-.chip-md { min-width: 22px; height: 18px; font-size: 11px; }
+.chip-md { min-width: 26px; height: 22px; font-size: 12px; }
 .chip-sm { min-width: 18px; height: 16px; font-size: 10px; }
 
 .chip-stack {
@@ -829,6 +852,13 @@ button { font: inherit; }
 .tag-up { background: rgba(0, 245, 212, 0.13); color: var(--teal); }
 
 .join-row { display: flex; gap: 10px; }
+
+/* A trailing quiet action — Back, Leave table — needs air above it, or it
+   collides with whatever control sits at the end of the card. */
+.setup-card > .btn-ghost {
+  width: 100%;
+  margin-top: 18px;
+}
 
 .join-code {
   flex: 1;

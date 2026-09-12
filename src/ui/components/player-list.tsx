@@ -109,10 +109,13 @@ function PlayerCard({
       </span>
 
       {held > 0 && (
-        <span className="card-chips" aria-label={`${held} chips carried`}>
-          {player.holding.map((chips, i) => (
-            <ChipFace key={i} chips={chips} size="sm" />
-          ))}
+        <span className="cargo" aria-label={`${held} treasure carried`}>
+          <span className="cargo-label">CARGO</span>
+          <span className="cargo-chips">
+            {player.holding.map((chips, i) => (
+              <ChipFace key={i} chips={chips} />
+            ))}
+          </span>
         </span>
       )}
     </button>
