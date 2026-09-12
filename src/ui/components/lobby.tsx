@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { LobbyPlayer } from '../../net/protocol';
+import type { AuthUser, LobbyPlayer } from '../../net/protocol';
 import { MIN_PLAYERS } from '../../engine';
 import { diverColor } from '../theme';
 
@@ -88,28 +88,45 @@ export function Lobby({
   );
 }
 
-/** Entry screen for online play: start a table or join one by code. */
+/**
+ * Entry screen for online play: start a table or join one by code.
+ *
+ * Signed in, the account supplies the name and the server is the one that
+ * knows which table is still waiting. Without accounts — a server running with
+ * no database — the diver types a name and the seat is remembered locally.
+ */
 export function JoinScreen({
+  account,
   onCreate,
   onJoin,
   onBack,
   resumable,
   onResume,
+  onSignOut,
 }: {
+  account: AuthUser | null;
   onCreate: (name: string) => void;
   onJoin: (code: string, name: string) => void;
   onBack: () => void;
   resumable: { code: string } | null;
   onResume: () => void;
+  onSignOut: (() => void) | null;
 }) {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const ready = name.trim().length > 0;
+  const diver = account?.username ?? name;
+  const ready = diver.trim().length > 0;
 
   return (
     <div className="setup">
       <div className="setup-card">
         <h1>Play online</h1>
+
+        {account && (
+          <p className="setup-blurb signed-in">
+            Diving as <strong>{account.username}</strong>
+          </p>
+        )}
 
         {resumable && (
           <button className="btn btn-lg resume" onClick={onResume}>
@@ -117,17 +134,23 @@ export function JoinScreen({
           </button>
         )}
 
-        <label className="setup-seed">
-          <span>Your name</span>
-          <input
-            value={name}
-            maxLength={16}
-            placeholder="Ama"
-            onChange={(e) => setName(e.target.value)}
-          />
-        </label>
+        {!account && (
+          <label className="setup-seed">
+            <span>Your name</span>
+            <input
+              value={name}
+              maxLength={16}
+              placeholder="Ama"
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+        )}
 
-        <button className="btn btn-primary btn-lg" disabled={!ready} onClick={() => onCreate(name)}>
+        <button
+          className="btn btn-primary btn-lg"
+          disabled={!ready}
+          onClick={() => onCreate(diver)}
+        >
           Start a new table
         </button>
 
@@ -144,7 +167,7 @@ export function JoinScreen({
           <button
             className="btn"
             disabled={!ready || code.trim().length !== 4}
-            onClick={() => onJoin(code, name)}
+            onClick={() => onJoin(code, diver)}
           >
             Join
           </button>
@@ -153,6 +176,12 @@ export function JoinScreen({
         <button className="btn btn-ghost btn-sm" onClick={onBack}>
           Back
         </button>
+
+        {onSignOut && (
+          <button className="btn btn-ghost btn-sm" onClick={onSignOut}>
+            Sign out
+          </button>
+        )}
       </div>
     </div>
   );

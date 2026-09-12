@@ -5,7 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // The game server owns the authoritative state; Vite just forwards the socket.
-    proxy: { '/ws': { target: 'ws://localhost:8787', ws: true } },
+    // The game server owns the authoritative state and the accounts; Vite just
+    // forwards the socket and the API to it.
+    proxy: {
+      '/ws': { target: 'ws://localhost:8787', ws: true },
+      '/api': { target: 'http://localhost:8787' },
+    },
   },
 });

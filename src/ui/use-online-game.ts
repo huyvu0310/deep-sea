@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameAction } from '../engine';
 import type { ClientMessage, LobbyPlayer, ServerMessage } from '../net/protocol';
-import { WS_PATH } from '../net/protocol';
 import type { GameView } from '../net/view';
+import { socketUrl } from './server-url';
 
 export type JoinIntent =
   | { kind: 'create'; name: string }
   | { kind: 'join'; code: string; name: string }
-  | { kind: 'resume'; code: string; token: string };
+  /** A seat to reclaim. The token covers a refresh; a signed-in player is
+   *  recognised by their account and needs no token at all. */
+  | { kind: 'resume'; code: string; token?: string };
 
 export type ConnectionStatus = 'connecting' | 'ready' | 'closed';
 
@@ -22,12 +24,19 @@ export interface OnlineController {
   start: (seed: string) => void;
 }
 
-/** Where a seat is remembered so a refresh does not forfeit a game in progress. */
+/**
+ * Where a seat is remembered so leaving does not forfeit a game in progress.
+ *
+ * This is local rather than per-tab storage, so closing the tab and coming
+ * back still finds the seat. For a signed-in player it is only a shortcut —
+ * the account is what actually holds the chair — but it is the whole of the
+ * mechanism on a server running without a database.
+ */
 const SEAT_KEY = 'deep-sea-seat';
 
 export function rememberSeat(code: string, token: string): void {
   try {
-    sessionStorage.setItem(SEAT_KEY, JSON.stringify({ code, token }));
+    localStorage.setItem(SEAT_KEY, JSON.stringify({ code, token }));
   } catch {
     // Private browsing can refuse storage; reconnecting is a convenience only.
   }
@@ -35,37 +44,26 @@ export function rememberSeat(code: string, token: string): void {
 
 export function recallSeat(): { code: string; token: string } | null {
   try {
-    const raw = sessionStorage.getItem(SEAT_KEY);
+    const raw = localStorage.getItem(SEAT_KEY);
     return raw ? (JSON.parse(raw) as { code: string; token: string }) : null;
   } catch {
     return null;
   }
 }
 
-/**
- * Where to open the game socket.
- *
- * With the client and server on one origin — local development, or the server
- * hosting its own build — the page's own host is right, and Vite proxies /ws in
- * dev. A split deployment sets VITE_WS_URL at build time; it may be given as a
- * plain origin or a full socket URL, over either http(s) or ws(s).
- */
-export function socketUrl(configured = import.meta.env.VITE_WS_URL): string {
-  const target = configured?.trim();
-  if (!target) {
-    const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${scheme}://${location.host}${WS_PATH}`;
+export function forgetSeat(): void {
+  try {
+    localStorage.removeItem(SEAT_KEY);
+  } catch {
+    // Nothing to clean up if storage was never available.
   }
-
-  const asSocket = target.replace(/^http(s?):/i, 'ws$1:').replace(/\/+$/, '');
-  return asSocket.endsWith(WS_PATH) ? asSocket : `${asSocket}${WS_PATH}`;
 }
 
 /**
  * Holds one table connection. The server owns the game, so this hook only
  * forwards intents and renders back whatever view arrives.
  */
-export function useOnlineGame(intent: JoinIntent): OnlineController {
+export function useOnlineGame(intent: JoinIntent, session: string | null): OnlineController {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [code, setCode] = useState<string | null>(null);
   const [seatId, setSeatId] = useState<string | null>(null);
@@ -80,12 +78,15 @@ export function useOnlineGame(intent: JoinIntent): OnlineController {
 
     socket.onopen = () => {
       setStatus('ready');
+      // The session rides along on the way in: where accounts are on, it is
+      // what proves the seat is this player's.
+      const credentials = session ? { session } : {};
       const hello: ClientMessage =
         intent.kind === 'create'
-          ? { type: 'create', name: intent.name }
+          ? { type: 'create', name: intent.name, ...credentials }
           : intent.kind === 'join'
-            ? { type: 'join', code: intent.code, name: intent.name }
-            : { type: 'resume', code: intent.code, token: intent.token };
+            ? { type: 'join', code: intent.code, name: intent.name, ...credentials }
+            : { type: 'resume', code: intent.code, token: intent.token, ...credentials };
       socket.send(JSON.stringify(hello));
     };
 

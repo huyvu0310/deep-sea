@@ -16,6 +16,16 @@ npm run dev        # hot-seat play at http://localhost:5173
 npm run server     # add this in a second terminal for online tables
 ```
 
+Online play works without a database, with each player typing a name. Set
+`DATABASE_URL` to a Postgres and the server grows accounts and saved tables
+instead:
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run server
+```
+
+The schema is created on boot, so there is no migration step.
+
 For a single-process deployment, build the client and let the game server host it:
 
 ```bash
@@ -23,7 +33,8 @@ npm run build
 npm run server     # serves dist/ and the websocket on http://localhost:8787
 ```
 
-Other commands: `npm test`, `npm run typecheck`.
+Other commands: `npm test`, `npm run typecheck`. The account and storage tests
+skip themselves unless `DATABASE_URL` is set, so `npm test` needs no database.
 
 ## How it is put together
 
@@ -31,7 +42,7 @@ Other commands: `npm test`, `npm run typecheck`.
 src/engine/   pure rules engine — no UI, no network, no Math.random
 src/net/      redacted player view + the client/server message protocol
 src/ui/       React components; hot-seat and online render the same board
-server/       authoritative websocket server, room codes, reconnection
+server/       authoritative websocket server, room codes, accounts, storage
 tests/        rulebook tests, a 150-seed soak test, server authority tests
 ```
 
@@ -54,14 +65,28 @@ projection is used hot-seat so they are not in the browser's memory either.
 
 The server owns the game. Clients send a `GameAction` and get back a `GameView`;
 the room rejects moves from anyone but the diver whose turn it is, and only the
-host can start. Seats are held open on disconnect and reclaimed with a token
-kept in `sessionStorage`, so a refresh does not forfeit a game in progress.
+host can start. The seat a client acts as is derived from its socket and never
+read from the message, so a client cannot ask to move as somebody else.
+
+### Coming back
+
+Seats are held open when a player disconnects, and there are two ways back into
+them. Without a database, a token kept in `localStorage` reclaims the seat, which
+covers a refresh or a closed tab on that browser. With one, the chair belongs to
+an account: signing in anywhere asks the server which table you are still seated
+at, and the game itself is written to Postgres after every move, so it also
+survives the server restarting or going to sleep.
+
+Accounts are username and password only — no email, and so no reset flow.
+Passwords are stored as salted scrypt hashes and session tokens only as their
+SHA-256 digests; neither is ever written down in a form that could be replayed.
 
 ## Deploying
 
 The client is static and the server is long-lived, so they deploy separately —
 Vercel and Render respectively, joined by `VITE_WS_URL` on the client build and
-`ALLOWED_ORIGINS` on the server. See [docs/deployment.md](docs/deployment.md).
+`ALLOWED_ORIGINS` on the server, plus `DATABASE_URL` for accounts. See
+[docs/deployment.md](docs/deployment.md).
 
 ## Documentation
 

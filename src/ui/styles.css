@@ -782,6 +782,21 @@ button { font: inherit; }
 
 .setup-blurb { margin: 0; color: var(--muted); }
 
+/* Who the table will see you as, on the way in. */
+.signed-in { color: var(--text); }
+.signed-in strong { color: var(--teal); font-family: var(--font-display); letter-spacing: 0.04em; }
+
+/* A refused sign-in: a taken username, a wrong password, an unreachable server. */
+.auth-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  font-size: 13px;
+}
+
 .setup-players { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .setup-players li { display: flex; align-items: center; gap: 10px; }
 

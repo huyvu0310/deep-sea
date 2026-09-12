@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { socketUrl } from '../src/ui/use-online-game';
+import { apiUrl, socketUrl } from '../src/ui/server-url';
 
 describe('resolving the game server address', () => {
   it('upgrades an https origin to a wss socket url', () => {
@@ -22,5 +22,23 @@ describe('resolving the game server address', () => {
     // Falls through to the page origin, which jsdom does not provide here; the
     // point is that it does not build a socket url out of whitespace.
     expect(() => socketUrl('   ')).toThrow();
+  });
+});
+
+describe('resolving the account api address', () => {
+  it('reaches the same host as the socket, over https', () => {
+    expect(apiUrl('/api/auth/me', 'wss://deep-sea.onrender.com/ws')).toBe(
+      'https://deep-sea.onrender.com/api/auth/me',
+    );
+  });
+
+  it('accepts the server given as a plain origin', () => {
+    expect(apiUrl('/api/auth/login', 'https://deep-sea.onrender.com')).toBe(
+      'https://deep-sea.onrender.com/api/auth/login',
+    );
+  });
+
+  it('stays on the page origin when no server is configured', () => {
+    expect(apiUrl('/api/auth/me', undefined)).toBe('/api/auth/me');
   });
 });
