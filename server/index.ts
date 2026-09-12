@@ -11,6 +11,22 @@ import type { Room } from './room';
 const PORT = Number(process.env.PORT ?? 8787);
 const DIST = fileURLToPath(new URL('../dist', import.meta.url));
 
+/**
+ * Origins allowed to open a socket, comma separated. Set this in any deployment
+ * where the client is hosted elsewhere, so a table cannot be driven from an
+ * arbitrary page. Left unset for local development, which allows any origin.
+ */
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? '')
+  .split(',')
+  .map((entry) => entry.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+function originAllowed(origin: string | undefined): boolean {
+  if (ALLOWED_ORIGINS.length === 0) return true;
+  if (!origin) return false;
+  return ALLOWED_ORIGINS.includes(origin.replace(/\/+$/, ''));
+}
+
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -26,12 +42,20 @@ const MIME: Record<string, string> = {
  * proxies the socket here.
  */
 const http = createServer((req, res) => {
-  if (!existsSync(DIST)) {
-    res.writeHead(404).end('Run `npm run build` to serve the client from here.');
+  const path = (req.url ?? '/').split('?')[0] ?? '/';
+
+  // Liveness probe for the host's health checks, answered whether or not a
+  // client build sits alongside the server.
+  if (path === '/healthz') {
+    res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }).end('ok');
     return;
   }
-  const url = (req.url ?? '/').split('?')[0] ?? '/';
-  const requested = join(DIST, normalize(url).replace(/^(\.\.[/\\])+/, ''));
+
+  if (!existsSync(DIST)) {
+    res.writeHead(404).end('No client build here - this server only runs games.');
+    return;
+  }
+  const requested = join(DIST, normalize(path).replace(/^(\.\.[/\\])+/, ''));
   const file =
     existsSync(requested) && statSync(requested).isFile() ? requested : join(DIST, 'index.html');
 
@@ -40,7 +64,11 @@ const http = createServer((req, res) => {
 });
 
 const registry = new RoomRegistry();
-const wss = new WebSocketServer({ server: http, path: WS_PATH });
+const wss = new WebSocketServer({
+  server: http,
+  path: WS_PATH,
+  verifyClient: ({ origin }: { origin: string }) => originAllowed(origin),
+});
 
 /** Which room each socket is sitting in, so disconnects can be cleaned up. */
 const seating = new Map<WebSocket, { room: Room; seatId: string }>();
@@ -129,5 +157,10 @@ wss.on('connection', (socket) => {
 });
 
 http.listen(PORT, () => {
-  console.log(`Deep Sea Adventure server listening on http://localhost:${PORT}${WS_PATH}`);
+  console.log(`Deep Sea Adventure server listening on port ${PORT} at ${WS_PATH}`);
+  console.log(
+    ALLOWED_ORIGINS.length > 0
+      ? `Accepting sockets from: ${ALLOWED_ORIGINS.join(', ')}`
+      : 'Accepting sockets from any origin (set ALLOWED_ORIGINS to restrict)',
+  );
 });

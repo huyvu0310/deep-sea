@@ -57,9 +57,16 @@ the room rejects moves from anyone but the diver whose turn it is, and only the
 host can start. Seats are held open on disconnect and reclaimed with a token
 kept in `sessionStorage`, so a refresh does not forfeit a game in progress.
 
+## Deploying
+
+The client is static and the server is long-lived, so they deploy separately —
+Vercel and Render respectively, joined by `VITE_WS_URL` on the client build and
+`ALLOWED_ORIGINS` on the server. See [docs/deployment.md](docs/deployment.md).
+
 ## Documentation
 
 - [docs/how-to-play.md](docs/how-to-play.md) — how to start a game, read the
   board, and not drown.
 - [docs/rules.md](docs/rules.md) — the implemented rules, and the two places
   where the rulebook left something open to interpretation.
+- [docs/deployment.md](docs/deployment.md) — hosting the client and server.

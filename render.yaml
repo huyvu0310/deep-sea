@@ -1,0 +1,19 @@
+# Render blueprint for the game server. The static client is deployed
+# separately (Vercel); this service only runs tables.
+services:
+  - type: web
+    name: deep-sea-server
+    runtime: node
+    plan: free
+    # --include=dev is explicit because Render sets NODE_ENV=production, which
+    # otherwise makes npm skip the devDependencies the build needs.
+    buildCommand: npm ci --include=dev && npm run build:server
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Comma-separated origins allowed to open a socket — set this to the
+      # Vercel URL once the client is deployed.
+      - key: ALLOWED_ORIGINS
+        sync: false
