@@ -1,18 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { WebSocket } from 'ws';
 import { Room } from '../server/room';
-import type { ServerMessage } from '../src/net/protocol';
-
-/** Stand-in socket that just records what the room sent it. */
-function fakeSocket() {
-  const sent: ServerMessage[] = [];
-  const socket = {
-    readyState: 1,
-    send: (raw: string) => sent.push(JSON.parse(raw) as ServerMessage),
-    close: () => {},
-  };
-  return { socket: socket as unknown as WebSocket, sent };
-}
+import { fakeSocket } from './fake-socket';
 
 function seatedRoom(names: string[]) {
   const room = new Room('TEST');

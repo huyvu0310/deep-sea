@@ -12,6 +12,9 @@ Both are needed. Miss the first and the client looks for a socket on its own
 Vercel domain, where nothing is listening. Miss the second and Render accepts
 sockets from any page on the internet.
 
+A third setting, `DATABASE_URL`, turns on accounts and saved tables. It is
+optional: without it the server runs exactly as it always did, from memory.
+
 ## 1. Push the repository
 
 Both hosts deploy from git.
@@ -40,6 +43,29 @@ Deploy, then note the service URL (e.g. `https://deep-sea-server.onrender.com`).
 `ALLOWED_ORIGINS` can be left unset for this first deploy — you do not have a
 Vercel URL yet, and unset means "accept any origin".
 
+### The database
+
+Accounts and saved tables need Postgres. Create a Neon project, copy its
+connection string, and set it on the Render service:
+
+| Name | Value |
+| --- | --- |
+| `DATABASE_URL` | `postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require` |
+
+The server connects with TLS and verifies the certificate, creates its four
+tables on boot if they are missing, and says which mode it is in on startup:
+
+```
+Accounts and saved tables are on (DATABASE_URL is set)
+Running from memory only (set DATABASE_URL for accounts and saved tables)
+```
+
+There is no migration step to run. The schema is created with
+`create table if not exists`, so a redeploy against an existing database is a
+no-op. Leaving `DATABASE_URL` unset is a supported mode, not a broken one: the
+client asks the server whether accounts exist and falls back to the old
+type-a-name flow when they do not.
+
 ## 3. Client on Vercel
 
 **Add New → Project**, import the repo. Vercel reads `vercel.json` and builds
@@ -65,6 +91,10 @@ ALLOWED_ORIGINS=https://deep-sea.vercel.app
 Use exact origins with no trailing path. Add the preview domain too if you want
 Vercel previews to work, comma separated. A rejected socket fails the handshake
 with a 401 and the client shows "Connection lost".
+
+The same allowlist guards the account API, which the browser reaches over
+ordinary HTTP and so is subject to CORS. An origin that is not on the list gets
+a 403 and sign-in fails, even though the page itself loaded fine.
 
 ## This project's deployment
 
@@ -94,21 +124,34 @@ URL works for guests without turning protection off.
 curl https://deep-sea-server.onrender.com/healthz   # -> ok
 ```
 
-Then open the Vercel URL in two browsers, create a table in one and join by code
-from the other. If the lobby never appears, the browser console will show the
-socket URL it tried.
+```bash
+curl https://deep-sea-server.onrender.com/api/auth/me
+# -> {"user":null,"activeRoom":null}   accounts are on
+# -> {"error":"Accounts are not enabled on this server"}   no DATABASE_URL
+```
+
+Then open the Vercel URL in two browsers, sign up as two divers, create a table
+in one and join by code from the other. If the lobby never appears, the browser
+console will show the socket URL it tried.
+
+To check rejoining, close one browser's tab mid-game, open a fresh one, sign in
+as the same diver, and take the **Rejoin table** button on the way in.
 
 ## What to expect from the free tiers
 
 These are real constraints of the setup, not bugs:
 
 - **Render free instances sleep after ~15 minutes idle** and take 30–60 seconds
-  to wake. The first player to arrive after a quiet spell will wait, and any
-  game still in progress when it sleeps is gone.
-- **Tables live in the server's memory.** A deploy, restart or sleep wipes every
-  room. Seats are reclaimable across a browser refresh, not across a restart.
-- **One instance only.** Rooms are held in-process, so scaling to a second
-  instance would split players across two sets of tables. Keep it at one.
+  to wake. The first player to arrive after a quiet spell will wait. With
+  `DATABASE_URL` set the game itself survives the sleep and is waiting when the
+  instance wakes; without it, the game is gone.
+- **Neon's free branch also sleeps**, and wakes in under a second. It costs the
+  first request after a quiet spell a moment; nothing is lost.
+- **One instance only.** A table is held in memory while it is being played and
+  only read back from Postgres when this process has not seen it, so two
+  instances could each hold their own copy of the same table and overwrite one
+  another. Keep it at one.
+- **Abandoned tables are swept after 24 hours**, along with expired sessions.
 
 Hot-seat play is unaffected by all of this: it runs entirely in the browser and
 needs no server at all.

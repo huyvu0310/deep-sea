@@ -13,7 +13,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "20"
-      # Comma-separated origins allowed to open a socket — set this to the
-      # Vercel URL once the client is deployed.
+      # Comma-separated origins allowed to open a socket or reach the account
+      # API — set this to the Vercel URL once the client is deployed.
       - key: ALLOWED_ORIGINS
+        sync: false
+      # Neon Postgres connection string. Without it the server still runs, but
+      # from memory only: no accounts, and tables are lost on every restart.
+      - key: DATABASE_URL
         sync: false
