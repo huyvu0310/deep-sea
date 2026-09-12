@@ -66,6 +66,18 @@ Use exact origins with no trailing path. Add the preview domain too if you want
 Vercel previews to work, comma separated. A rejected socket fails the handshake
 with a 401 and the client shows "Connection lost".
 
+## This project's deployment
+
+| | |
+| --- | --- |
+| Server | `deep-sea-server` on Render — `https://deep-sea-server.onrender.com` |
+| Client | `deep-sea` on Vercel — `https://deep-sea-vu-duongs-projects-58c07326.vercel.app` |
+| Repo | `huyvu0310/deep-sea`, both hosts auto-deploy from `main` |
+
+`ALLOWED_ORIGINS` on Render is set to the Vercel production alias above. Note
+that `deep-sea.vercel.app` belongs to an unrelated project — the alias for this
+one carries the team suffix.
+
 ## Checking it works
 
 ```bash
