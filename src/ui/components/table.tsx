@@ -59,6 +59,7 @@ export function Table({
         subtitle={`${mode} // ROUND ${view.round} OF ${view.totalRounds}`}
         code={tableCode}
         divers={stillDiving}
+        actions={<ChipGuide path={view.path} />}
       />
 
       <div className="dashboard">
@@ -77,7 +78,6 @@ export function Table({
               attention already is, rather than buried in the side panel. */}
           <div className="board-hud">
             <AirHud state={view} />
-            <ChipGuide path={view.path} />
           </div>
 
           {playing && active && (

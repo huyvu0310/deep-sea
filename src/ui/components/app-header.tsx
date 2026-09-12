@@ -28,10 +28,13 @@ export function AppHeader({
   subtitle,
   code,
   divers,
+  actions,
 }: {
   subtitle: string;
   code: string;
   divers: number;
+  /** Controls that belong to the table rather than the header itself. */
+  actions?: React.ReactNode;
 }) {
   return (
     <header className="app-header">
@@ -46,6 +49,7 @@ export function AppHeader({
       </div>
 
       <div className="lobby-stats">
+        {actions}
         <SoundToggle />
         <div className="stat-item">
           <span className="stat-label">TABLE:</span>
