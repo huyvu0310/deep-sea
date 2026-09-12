@@ -1,12 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { accountForSession, signIn, signOut, signUp } from './auth';
 import { dbEnabled } from './db';
+import { createPlayer, forgetPlayer, playerForToken, renamePlayer, touchPlayer } from './identity';
 import { originAllowed } from './origins';
 import { activeRoomForUser } from './store';
 
 const API_PREFIX = '/api/';
 
-/** Credentials are small; anything larger is not a sign-in attempt. */
+/** A name is small; anything larger is not a request from this game. */
 const MAX_BODY_BYTES = 4096;
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -63,7 +63,7 @@ function text(value: unknown): string {
 }
 
 /**
- * Handle an account request. Returns false when the path is not ours, so the
+ * Handle an identity request. Returns false when the path is not ours, so the
  * caller can go on to serve the client build.
  */
 export async function handleApi(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
@@ -81,45 +81,56 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse): Prom
   }
 
   if (!dbEnabled) {
-    json(res, 503, { error: 'Accounts are not enabled on this server' });
+    json(res, 503, { error: 'This server keeps no record of players' });
     return true;
   }
 
   try {
     switch (`${req.method} ${path}`) {
-      case 'POST /api/auth/signup':
-      case 'POST /api/auth/login': {
+      /**
+       * Claim a name. A browser that already has an identity keeps it and is
+       * simply renamed, so changing the name on the way into a table does not
+       * cost anyone the chair they are sitting in.
+       */
+      case 'POST /api/player': {
         const body = await readJson(req);
-        const username = text(body.username);
-        const password = typeof body.password === 'string' ? body.password : '';
-        const result = path.endsWith('signup')
-          ? await signUp(username, password)
-          : await signIn(username, password);
+        const name = text(body.name);
+        const token = bearer(req);
+
+        const existing = token ? await playerForToken(token) : null;
+        if (existing) {
+          const player = existing.name === name ? existing : await renamePlayer(existing.id, name);
+          await touchPlayer(token);
+          json(res, 200, {
+            player,
+            token,
+            activeRoom: await activeRoomForUser(player.id),
+          });
+          return true;
+        }
+
+        const created = await createPlayer(name);
+        json(res, 200, { player: created.player, token: created.token, activeRoom: null });
+        return true;
+      }
+
+      case 'GET /api/player': {
+        // "Nobody yet" is a perfectly good answer for a first-time visitor,
+        // and not a failure worth colouring an error.
+        const token = bearer(req);
+        const player = token ? await playerForToken(token) : null;
         json(res, 200, {
-          user: result.account,
-          token: result.token,
-          // Signing in is exactly when someone needs to be told they left a
-          // dive running, so the answer carries the table rather than making
-          // the client ask a second time.
-          activeRoom: await activeRoomForUser(result.account.id),
+          player,
+          token: player ? token : null,
+          activeRoom: player ? await activeRoomForUser(player.id) : null,
         });
         return true;
       }
 
-      case 'POST /api/auth/logout': {
-        await signOut(bearer(req));
-        json(res, 200, {});
-        return true;
-      }
-
-      case 'GET /api/auth/me': {
-        // "Nobody" is a perfectly good answer to "who am I": every visitor asks
-        // this before signing in, and that is not a failure.
-        const account = await accountForSession(bearer(req));
-        json(res, 200, {
-          user: account,
-          activeRoom: account ? await activeRoomForUser(account.id) : null,
-        });
+      case 'DELETE /api/player':
+      case 'POST /api/player/forget': {
+        await forgetPlayer(bearer(req));
+        json(res, 200, { player: null, token: null, activeRoom: null });
         return true;
       }
 
@@ -128,8 +139,8 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse): Prom
         return true;
     }
   } catch (err) {
-    // These are all expected refusals — a taken username, a bad password, a
-    // malformed body — so they are reported as such rather than as a crash.
+    // These are expected refusals — an empty name, a malformed body — so they
+    // are reported as such rather than as a crash.
     json(res, 400, { error: err instanceof Error ? err.message : 'Something went wrong' });
     return true;
   }

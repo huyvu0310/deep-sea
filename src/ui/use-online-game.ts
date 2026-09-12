@@ -51,14 +51,6 @@ export function recallSeat(): { code: string; token: string } | null {
   }
 }
 
-export function forgetSeat(): void {
-  try {
-    localStorage.removeItem(SEAT_KEY);
-  } catch {
-    // Nothing to clean up if storage was never available.
-  }
-}
-
 /**
  * Holds one table connection. The server owns the game, so this hook only
  * forwards intents and renders back whatever view arrives.

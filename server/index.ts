@@ -3,11 +3,11 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
-import type { AuthUser, ClientMessage, ServerMessage } from '../src/net/protocol';
+import type { ClientMessage, PlayerIdentity, ServerMessage } from '../src/net/protocol';
 import { WS_PATH } from '../src/net/protocol';
 import { handleApi } from './api';
-import { accountForSession } from './auth';
 import { dbEnabled, migrate, sweep } from './db';
+import { playerForToken } from './identity';
 import { allowedOrigins, originAllowed } from './origins';
 import { RoomRegistry } from './rooms';
 import type { Room } from './room';
@@ -58,7 +58,7 @@ function serve(req: IncomingMessage, res: ServerResponse): void {
 }
 
 const http = createServer((req, res) => {
-  // Accounts answer first; anything else is the client build.
+  // The identity endpoints answer first; anything else is the client build.
   handleApi(req, res)
     .then((handled) => {
       if (!handled) serve(req, res);
@@ -96,18 +96,17 @@ function seat(socket: WebSocket, room: Room, id: string, token: string): void {
 }
 
 /**
- * Who is at the keyboard. With no database there are no accounts and a player
- * is whoever they say they are, exactly as before; with one, online play is for
- * signed-in players and the chair belongs to the account rather than to
- * whoever is holding a token.
+ * Who is at the keyboard.
+ *
+ * There is no gate here: a browser without a recognised identity simply plays
+ * as whoever it says it is, exactly as it did before there was a database. The
+ * identity is what lets a chair be found again later, not permission to sit in
+ * one, so failing to have one costs the player nothing but that.
  */
-async function accountOf(session: string | undefined): Promise<AuthUser | null> {
+async function playerOf(session: string | undefined): Promise<PlayerIdentity | null> {
   if (!dbEnabled) return null;
   const token = session?.trim();
-  if (!token) throw new Error('Sign in to play online');
-  const account = await accountForSession(token);
-  if (!account) throw new Error('Your session has expired — sign in again');
-  return account;
+  return token ? await playerForToken(token) : null;
 }
 
 async function handle(socket: WebSocket, message: ClientMessage): Promise<void> {
@@ -115,37 +114,40 @@ async function handle(socket: WebSocket, message: ClientMessage): Promise<void> 
 
   switch (message.type) {
     case 'create': {
-      const account = await accountOf(message.session);
+      const player = await playerOf(message.session);
       const room = await registry.create();
-      const created = room.join(account?.username ?? message.name, socket, account?.id ?? null);
+      const created = room.join(player?.name ?? message.name, socket, player?.id ?? null);
       seat(socket, room, created.id, created.token);
       await saveRoom(room.snapshot());
       return;
     }
     case 'join': {
-      const account = await accountOf(message.session);
+      const player = await playerOf(message.session);
       const room = await registry.find(message.code);
       if (!room) throw new Error(`No table with code ${message.code.toUpperCase()}`);
 
       // Someone who already holds a chair here is coming back to it, however
       // they arrived. Typing the code again is not a request for a second seat,
       // and it must work after the dive has started, when joining cannot.
-      const held = account ? room.seatFor(account.id) : undefined;
+      const held = player ? room.seatFor(player.id) : undefined;
       const joined =
-        account && held
-          ? room.resumeAs(account.id, socket)
-          : room.join(account?.username ?? message.name, socket, account?.id ?? null);
+        player && held
+          ? room.resumeAs(player.id, socket)
+          : room.join(player?.name ?? message.name, socket, player?.id ?? null);
 
       seat(socket, room, joined.id, joined.token);
       await saveRoom(room.snapshot());
       return;
     }
     case 'resume': {
-      const account = await accountOf(message.session);
+      const player = await playerOf(message.session);
       const room = await registry.find(message.code);
       if (!room) throw new Error('That table has closed');
-      const resumed = account
-        ? room.resumeAs(account.id, socket)
+
+      // The identity is the durable claim on a chair; the per-table token is
+      // the fallback on a server keeping no record of players.
+      const resumed = player
+        ? room.resumeAs(player.id, socket)
         : room.resume(message.token ?? '', socket);
       seat(socket, room, resumed.id, resumed.token);
       return;
@@ -222,8 +224,8 @@ async function boot(): Promise<void> {
     );
     console.log(
       dbEnabled
-        ? 'Accounts and saved tables are on (DATABASE_URL is set)'
-        : 'Running from memory only (set DATABASE_URL for accounts and saved tables)',
+        ? 'Saved tables are on (DATABASE_URL is set)'
+        : 'Running from memory only (set DATABASE_URL to keep tables across restarts)',
     );
   });
 }

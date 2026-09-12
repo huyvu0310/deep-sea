@@ -2,23 +2,27 @@ import { useCallback, useMemo, useState } from 'react';
 import type { NewGameOptions } from '../engine';
 import { toView } from '../net/view';
 import { Table } from './components/table';
-import { AuthScreen } from './components/auth-screen';
 import { JoinScreen, Lobby } from './components/lobby';
 import { SetupScreen, type SetupResult } from './components/setup-screen';
-import { useAuth, type Auth } from './use-auth';
+import { useIdentity, type Identity } from './use-identity';
 import { useGame } from './use-game';
-import { forgetSeat, recallSeat, useOnlineGame, type JoinIntent } from './use-online-game';
+import { recallSeat, useOnlineGame, type JoinIntent } from './use-online-game';
 
 type Screen =
   | { kind: 'menu' }
   | { kind: 'hotseat'; setup: SetupResult }
-  | { kind: 'online'; intent: JoinIntent };
+  /**
+   * The identity token travels with the intent rather than being read back off
+   * the hook: it is claimed in the same breath as opening the table, and React
+   * state would not have settled by then.
+   */
+  | { kind: 'online'; intent: JoinIntent; session: string | null };
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'menu' });
-  // Held above the screens, so signing in survives walking in and out of a table.
-  const auth = useAuth();
-  const { refresh } = auth;
+  // Held above the screens, so the identity survives walking in and out of a table.
+  const identity = useIdentity();
+  const { refresh } = identity;
 
   const toMenu = useCallback(() => {
     setScreen({ kind: 'menu' });
@@ -29,7 +33,7 @@ export function App() {
 
   switch (screen.kind) {
     case 'menu':
-      return <Menu auth={auth} onScreen={setScreen} />;
+      return <Menu identity={identity} onScreen={setScreen} />;
     case 'hotseat':
       return <HotSeatTable setup={screen.setup} onLeave={toMenu} />;
     case 'online':
@@ -38,14 +42,20 @@ export function App() {
           // A fresh connection per intent, so rejoining never reuses a dead socket.
           key={JSON.stringify(screen.intent)}
           intent={screen.intent}
-          session={auth.token}
+          session={screen.session}
           onLeave={toMenu}
         />
       );
   }
 }
 
-function Menu({ auth, onScreen }: { auth: Auth; onScreen: (screen: Screen) => void }) {
+function Menu({
+  identity,
+  onScreen,
+}: {
+  identity: Identity;
+  onScreen: (screen: Screen) => void;
+}) {
   const [online, setOnline] = useState(false);
   const seat = useMemo(() => recallSeat(), []);
   const toSetup = useCallback(() => setOnline(false), []);
@@ -59,45 +69,33 @@ function Menu({ auth, onScreen }: { auth: Auth; onScreen: (screen: Screen) => vo
     );
   }
 
-  // Which of these screens is right depends on the server's answer, so wait
-  // for it rather than flash a sign-in form at a server that has no accounts.
-  if (!auth.ready) {
-    return (
-      <div className="setup">
-        <div className="setup-card">
-          <h1>Surfacing…</h1>
-          <p className="setup-blurb">Contacting the expedition office.</p>
-          <button className="btn btn-ghost btn-sm" onClick={toSetup}>
-            Back
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Claim the name, then open the table with the token that came back. On a
+  // server that remembers nobody this simply answers null and play carries on
+  // under the typed name.
+  const enter = (name: string, intent: JoinIntent) => {
+    void identity.claim(name).then((session) => onScreen({ kind: 'online', intent, session }));
+  };
 
-  if (auth.accountsEnabled && !auth.user) {
-    return <AuthScreen auth={auth} onBack={toSetup} />;
-  }
-
-  // Signed in, the server knows which table is still ours. Without accounts the
-  // only record is the seat this browser kept.
-  const resumable = auth.activeRoom
-    ? { code: auth.activeRoom }
+  // The server knows which table is still ours. With nothing remembered, the
+  // only record is the seat this browser kept for itself.
+  const resumable = identity.activeRoom
+    ? { code: identity.activeRoom }
     : seat
       ? { code: seat.code }
       : null;
 
   return (
     <JoinScreen
-      account={auth.user}
-      onCreate={(name) => onScreen({ kind: 'online', intent: { kind: 'create', name } })}
-      onJoin={(code, name) => onScreen({ kind: 'online', intent: { kind: 'join', code, name } })}
+      knownAs={identity.player?.name ?? null}
+      onCreate={(name) => enter(name, { kind: 'create', name })}
+      onJoin={(code, name) => enter(name, { kind: 'join', code, name })}
       onBack={toSetup}
       resumable={resumable}
       onResume={() =>
         resumable &&
         onScreen({
           kind: 'online',
+          session: identity.token,
           intent: {
             kind: 'resume',
             code: resumable.code,
@@ -105,16 +103,6 @@ function Menu({ auth, onScreen }: { auth: Auth; onScreen: (screen: Screen) => vo
             ...(seat?.code === resumable.code ? { token: seat.token } : {}),
           },
         })
-      }
-      onSignOut={
-        auth.accountsEnabled
-          ? () => {
-              // The seat belongs to the account that just left, not to whoever
-              // signs in next on this browser.
-              forgetSeat();
-              auth.signOut();
-            }
-          : null
       }
     />
   );

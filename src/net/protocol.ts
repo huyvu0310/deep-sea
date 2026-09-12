@@ -3,17 +3,23 @@ import type { GameView } from './view';
 
 export const WS_PATH = '/ws';
 
-/** A signed-in account, as everyone outside the password check sees it. */
-export interface AuthUser {
+/**
+ * Who a browser is playing as. Issued by the server the first time someone
+ * gives a name, and kept from then on — there is no password, so this is an
+ * identity rather than an account: it says which chairs are yours, not who
+ * you are.
+ */
+export interface PlayerIdentity {
   id: string;
-  username: string;
+  name: string;
 }
 
-/** What the account endpoints answer with on success. */
-export interface AuthResponse {
-  user: AuthUser;
-  token: string;
-  /** A table this account is still seated at, offered on the way back in. */
+/** What the identity endpoints answer with. */
+export interface IdentityResponse {
+  player: PlayerIdentity | null;
+  /** The secret this browser keeps to prove it is the same player. */
+  token: string | null;
+  /** A table this player is still seated at, offered on the way back in. */
   activeRoom: string | null;
 }
 
@@ -25,9 +31,9 @@ export interface LobbyPlayer {
 }
 
 /**
- * Every way in carries the session token when the player is signed in. The
- * server takes the name from the account rather than the message, so a client
- * cannot seat itself under someone else's name.
+ * Every way in carries the browser's identity token. The server takes the name
+ * from the identity rather than the message, so a client cannot seat itself
+ * under a name the server did not give it.
  */
 export type ClientMessage =
   | { type: 'create'; name: string; session?: string }

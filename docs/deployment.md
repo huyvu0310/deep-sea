@@ -12,7 +12,7 @@ Both are needed. Miss the first and the client looks for a socket on its own
 Vercel domain, where nothing is listening. Miss the second and Render accepts
 sockets from any page on the internet.
 
-A third setting, `DATABASE_URL`, turns on accounts and saved tables. It is
+A third setting, `DATABASE_URL`, turns on saved tables and rejoining. It is
 optional: without it the server runs exactly as it always did, from memory.
 
 ## 1. Push the repository
@@ -45,8 +45,8 @@ Vercel URL yet, and unset means "accept any origin".
 
 ### The database
 
-Accounts and saved tables need Postgres. Create a Neon project, copy its
-connection string, and set it on the Render service:
+Saved tables need Postgres. Create a Neon project, copy its connection string,
+and set it on the Render service:
 
 | Name | Value |
 | --- | --- |
@@ -56,15 +56,19 @@ The server connects with TLS and verifies the certificate, creates its four
 tables on boot if they are missing, and says which mode it is in on startup:
 
 ```
-Accounts and saved tables are on (DATABASE_URL is set)
-Running from memory only (set DATABASE_URL for accounts and saved tables)
+Saved tables are on (DATABASE_URL is set)
+Running from memory only (set DATABASE_URL to keep tables across restarts)
 ```
 
 There is no migration step to run. The schema is created with
 `create table if not exists`, so a redeploy against an existing database is a
 no-op. Leaving `DATABASE_URL` unset is a supported mode, not a broken one: the
-client asks the server whether accounts exist and falls back to the old
-type-a-name flow when they do not.
+client asks the server whether it remembers players and plays under the typed
+name when it does not.
+
+Nobody signs in. The first time a player gives a name the server issues that
+browser an identity, which is what lets a chair be handed back later. There are
+no passwords to manage and no personal data beyond a chosen display name.
 
 ## 3. Client on Vercel
 
@@ -92,9 +96,9 @@ Use exact origins with no trailing path. Add the preview domain too if you want
 Vercel previews to work, comma separated. A rejected socket fails the handshake
 with a 401 and the client shows "Connection lost".
 
-The same allowlist guards the account API, which the browser reaches over
+The same allowlist guards the identity API, which the browser reaches over
 ordinary HTTP and so is subject to CORS. An origin that is not on the list gets
-a 403 and sign-in fails, even though the page itself loaded fine.
+a 403, and rejoining silently stops working even though the page loaded fine.
 
 ## This project's deployment
 
@@ -125,17 +129,22 @@ curl https://deep-sea-server.onrender.com/healthz   # -> ok
 ```
 
 ```bash
-curl https://deep-sea-server.onrender.com/api/auth/me
-# -> {"user":null,"activeRoom":null}   accounts are on
-# -> {"error":"Accounts are not enabled on this server"}   no DATABASE_URL
+curl -H 'Origin: https://deep-sea-snowy.vercel.app' \
+  https://deep-sea-server.onrender.com/api/player
+# -> {"player":null,"token":null,"activeRoom":null}   the database is on
+# -> {"error":"This server keeps no record of players"}   no DATABASE_URL
 ```
 
-Then open the Vercel URL in two browsers, sign up as two divers, create a table
-in one and join by code from the other. If the lobby never appears, the browser
+The `Origin` header matters: without one the allowlist refuses the request with
+a 403, exactly as it would for a stranger's page.
+
+Then open the Vercel URL in two browsers, type a name in each, create a table in
+one and join by code from the other. If the lobby never appears, the browser
 console will show the socket URL it tried.
 
-To check rejoining, close one browser's tab mid-game, open a fresh one, sign in
-as the same diver, and take the **Rejoin table** button on the way in.
+To check rejoining, close one browser's tab mid-game and open the site again in
+that browser: the **Rejoin table** button should be waiting on the online
+screen.
 
 ## What to expect from the free tiers
 
@@ -151,7 +160,8 @@ These are real constraints of the setup, not bugs:
   only read back from Postgres when this process has not seen it, so two
   instances could each hold their own copy of the same table and overwrite one
   another. Keep it at one.
-- **Abandoned tables are swept after 24 hours**, along with expired sessions.
+- **Abandoned tables are swept after 24 hours**, along with lapsed identities
+  and any player row left with neither a token nor a chair.
 
 Hot-seat play is unaffected by all of this: it runs entirely in the browser and
 needs no server at all.

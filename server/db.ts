@@ -51,10 +51,17 @@ const SCHEMA = `
 create table if not exists users (
   id uuid primary key,
   username text not null,
-  password_hash text not null,
+  -- Reserved for the day this grows real accounts. Identities issued to a
+  -- browser have no password, so it stays empty.
+  password_hash text,
   created_at timestamptz not null default now()
 );
-create unique index if not exists users_username_key on users (lower(username));
+
+-- Two divers may both be called Ama; the id is what tells them apart. The
+-- unique name index belonged to the account flow and is dropped here so an
+-- already-deployed database follows.
+alter table users alter column password_hash drop not null;
+drop index if exists users_username_key;
 
 create table if not exists sessions (
   token_hash text primary key,
@@ -87,12 +94,20 @@ export async function migrate(): Promise<void> {
   await pool.query(SCHEMA);
 }
 
-/** Forget expired sessions and tables nobody has touched in a while. */
+/** Forget expired identities and tables nobody has touched in a while. */
 export async function sweep(staleHours = 24): Promise<void> {
   if (!pool) return;
   await pool.query('delete from sessions where expires_at < now()');
   await pool.query(
     `delete from rooms where updated_at < now() - ($1 || ' hours')::interval`,
     [String(staleHours)],
+  );
+  // A player is only their token, so once it is gone the row is unreachable.
+  // Seats cascade from users, so one still holding a chair is left alone —
+  // otherwise clearing an identity would take a diver out of a live table.
+  await pool.query(
+    `delete from users
+      where not exists (select 1 from sessions s where s.user_id = users.id)
+        and not exists (select 1 from seats t where t.user_id = users.id)`,
   );
 }
